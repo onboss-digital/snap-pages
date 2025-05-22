@@ -53,7 +53,7 @@
 @endsection
 
 @section('scripts')
-
+    @vite('resources/js/pages/pay.js')
 @endsection
 
 
@@ -482,7 +482,7 @@
                             {{ __('payment.checking_secure') }}
                         </div>
 
-                        <button id="checkout-button" type="button" wire:click="sendCheckout"
+                        <button id="checkout-button" type="button"
                             class="w-full bg-[#E50914] hover:bg-[#B8070F] text-white py-3 text-lg font-bold rounded-xl transition-all">
                             {{ __('payment.start_premium') }}
                         </button>
