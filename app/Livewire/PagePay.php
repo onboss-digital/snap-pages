@@ -2,15 +2,33 @@
 
 namespace App\Livewire;
 
+use App\Models\Order;
+use App\Models\User;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Cache;
 
 class PagePay extends Component
 {
-    // Variáveis de estado principais (antes em JavaScript)
+
+    public $cardName, $cardNumber, $cardExpiry, $cardCvv, $email, $phone,
+        $plans, $modalData, $product;
+
+
+
+    // Modais
+    public $showSecure = false;
+    public $showLodingModal = false;
+    public $showDownsellModal = false;
+    public $showUpsellModal = false;
+
+    public $selectedCurrency = 'BRL';
+    public $selectedLanguage = 'br';
+    // Order Bump
+    public $selectedPlan = 'monthly';
     public $availableLanguages = [
         'br' => '🇧🇷 Português',
         'en' => '🇺🇸 English',
@@ -18,33 +36,33 @@ class PagePay extends Component
     ];
 
     // Moedas e Conversão
-    public $selectedCurrency = 'BRL';
-    public $currencySymbols = [
-        'BRL' => 'R$',
-        'USD' => '$',
-        'EUR' => '€',
-        'GBP' => '£'
-    ];
-    public $conversionRates = [
-        'BRL' => 1.0,
-        'USD' => 0.17,
-        'EUR' => 0.16,
-        'GBP' => 0.13
-    ];
 
+    public $currencies = [
+        'BRL' => [
+            'symbol' => 'R$',
+            'name' => 'Real Brasileiro',
+            'code' => 'BRL',
+            'label' => "payment.brl",
+        ],
+        'USD' => [
+            'symbol' => '$',
+            'name' => 'Dólar Americano',
+            'code' => 'USD',
+            'label' => "payment.usd",
+        ],
+        'EUR' => [
+            'symbol' => '€',
+            'name' => 'Euro',
+            'code' => 'EUR',
+            'label' => "payment.eur",
+        ],
+    ];
     // Planos e preços
-    public $plans;
-    public $selectedPlan = 'monthly';
-    public $selectedLanguage = 'br';
-    public $basePrices = [
-        'monthly' => 58.99,
-        'quarterly' => 53.09, // 10% off
-        'annual' => 44.24,    // 25% off
-        'bump' => 9.99
-    ];
 
-    // Order Bump
+
+
     public $bumpActive = false;
+
     public $bump = [
         'id' => 4,
         'title' => 'Acesso Exclusivo',
@@ -52,9 +70,6 @@ class PagePay extends Component
         'price' => 9.99,
         'hash' => 'xwe2w2p4ce_lxcb1z6opc',
     ];
-
-    // Checkout progressivo
-    public $progressStep = 1;
 
     // Contador regressivo
     public $countdownMinutes = 14;
@@ -71,12 +86,7 @@ class PagePay extends Component
     public $spotsLeft = 12;
     public $activityCount = 0;
 
-    // Modais
-    public $showUpsellModal = false;
-    public $showDownsellModal = false;
-    public $showProcessingModal = false;
-    public $showPersonalizacaoModal = false;
-    public $showSegurancaVerificacao = false;
+    // Modais duplicadas removidas
 
     // Valores calculados
     public $totals = [];
@@ -110,237 +120,194 @@ class PagePay extends Component
         ]
     ];
 
-    // Lifecycle hooks
     public function mount()
     {
-        // Inicializar planos com mesma estrutura do arquivo original
-        $this->plans = [
-            'br' => [
-                'monthly' => [
-                    'hash' => 'penev',
-                    'label' => __('payment.monthly'),
-                    'price' => 60.00,
-                ],
-                'quarterly' => [
-                    'hash' => 'velit nostrud dolor in deserunt',
-                    'label' => __('payment.quarterly'),
-                    'price' => 265.00,
-                ],
-                'annual' => [
-                    'hash' => 'cupxl',
-                    'label' => __('payment.annual'),
-                    'price' => 783.00,
-                ]
-            ],
-            'en' => [
-                'monthly' => [
-                    'hash' => 'penev',
-                    'label' => __('payment.monthly'),
-                    'price' => 60.00,
-                ],
-                'quarterly' => [
-                    'hash' => 'velit nostrud dolor in deserunt',
-                    'label' => __('payment.quarterly'),
-                    'price' => 265.00,
-                ],
-                'annual' => [
-                    'hash' => 'cupxl',
-                    'label' => __('payment.annual'),
-                    'price' => 783.00,
-                ]
-            ],
-            'es' => [
-                'monthly' => [
-                    'hash' => 'penev',
-                    'label' => __('payment.monthly'),
-                    'price' => 60.00,
-                ],
-                'quarterly' => [
-                    'hash' => 'velit nostrud dolor in deserunt',
-                    'label' => __('payment.quarterly'),
-                    'price' => 265.00,
-                ],
-                'annual' => [
-                    'hash' => 'cupxl',
-                    'label' => __('payment.annual'),
-                    'price' => 783.00,
-                ]
-            ]
-        ];
+        $this->plans = $this->getPlans();
 
         // Recuperar preferências do usuário (antes em localStorage)
         $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
         $this->selectedPlan = Session::get('selectedPlan', 'monthly');
         $this->selectedLanguage = app()->getLocale();
 
-        // Detectar localização e moeda (antes em JavaScript)
-        $this->detectCurrencyByGeolocation();
-
         // Calcular valores iniciais
         $this->calculateTotals();
 
         // Iniciar contador de atividade
         $this->activityCount = rand(1, 50);
-    }
 
-    // Métodos para atualização reativa
-
-    public function updateCurrency($currency)
-    {
-        $this->selectedCurrency = $currency;
-        Session::put('selectedCurrency', $currency);
-        $this->calculateTotals();
-        $this->showPersonalizacao();
-    }
-
-    public function updatePlan($plan)
-    {
-        $this->selectedPlan = $plan;
-        Session::put('selectedPlan', $plan);
-        $this->calculateTotals();
-        $this->updateProgress(max($this->progressStep, 2));
-        $this->showPersonalizacao();
-    }
-
-    public function toggleBump()
-    {
-        $this->bumpActive = !$this->bumpActive;
-        if ($this->bumpActive) {
-            $this->updateProgress(max($this->progressStep, 3));
-            $this->spotsLeft--;
-        }
-        $this->calculateTotals();
-    }
-
-    public function applyCoupon()
-    {
-        $couponCode = strtoupper($this->couponCode);
-
-        if ($couponCode === 'DESCONTO20') {
-            $this->couponApplied = true;
-            $this->couponDiscount = 0.20; // 20% discount
-            $this->couponMessage = 'Cupom de 20% aplicado com sucesso!';
-            $this->couponMessageType = 'success';
-            $this->updateProgress(max($this->progressStep, 3));
-        } elseif ($couponCode === 'PROMO10') {
-            $this->couponApplied = true;
-            $this->couponDiscount = 0.10; // 10% discount
-            $this->couponMessage = 'Cupom de 10% aplicado com sucesso!';
-            $this->couponMessageType = 'success';
-            $this->updateProgress(max($this->progressStep, 3));
-        } else {
-            $this->couponMessage = 'Cupom inválido, tente novamente.';
-            $this->couponMessageType = 'error';
-        }
-
-        $this->calculateTotals();
-    }
-
-    // Métodos auxiliares
-
-    public function convertPrice($priceInBRL, $currency)
-    {
-        return $priceInBRL * $this->conversionRates[$currency];
-    }
-
-    public function formatPrice($price, $currency)
-    {
-        return $this->currencySymbols[$currency] . number_format($price, 2, ',', '.');
-    }
-
-    public function calculateTotals()
-    {
-        $this->updateListProducts();
-
-        $originalPrice = 0.0;
-        foreach ($this->listProducts as $product) {
-            $originalPrice += floatval(str_replace([',', 'R$', '$', '€', '£'], ['.', '', '', '', ''], $product['price']));
-        }
-
-        // Aplicar desconto do cupom
-        $discount = $this->couponApplied ? $originalPrice * $this->couponDiscount : 0.0;
-        $totalPay = $originalPrice - $discount;
-
-        $planPrice = $this->convertPrice($this->basePrices[$this->selectedPlan], $this->selectedCurrency);
-
-        $this->totals = [
-            'original_price' => $this->formatPrice($originalPrice, $this->selectedCurrency),
-            'discount' => $this->formatPrice($discount, $this->selectedCurrency),
-            'total_pay' => $this->formatPrice($totalPay, $this->selectedCurrency),
-            'real_price' => $this->formatPrice(89.90, $this->selectedCurrency), // Preço "original" antes do desconto
-            'descont_price' => $this->formatPrice($planPrice, $this->selectedCurrency),
-            'total_price' => $this->formatPrice($totalPay, $this->selectedCurrency),
+        $this->product = [
+            'hash' => '3nidg2uzc0',
+            'title' => 'Criptografía anónima',
+            'cover' => 'https://d2lr0gp42cdhn1.cloudfront.net/3564404929/products/kox0kdggyhe4ggjgeilyhuqpd',
+            'product_type' => 'digital',
+            'guaranted_days' => 7,
+            'sale_page' => 'https://snaphubb.com',
         ];
     }
 
-    public function updateListProducts()
-    {
-        $plan = $this->plans[$this->selectedLanguage][$this->selectedPlan] ?? null;
-        $this->listProducts = [];
-        if ($plan) {
-            $planPrice = $this->convertPrice($this->basePrices[$this->selectedPlan], $this->selectedCurrency);
-            $this->listProducts[] = [
-                'name' => __('payment.premium_subscription'),
-                'price' => $this->formatPrice($planPrice, $this->selectedCurrency),
-            ];
-        }
 
-        if ($this->bumpActive) {
-            $bumpPrice = $this->convertPrice($this->bump['price'], $this->selectedCurrency);
-            $this->listProducts[] = [
-                'name' => $this->bump['title'],
-                'price' => $this->formatPrice($bumpPrice, $this->selectedCurrency),
-            ];
-        }
+    public function getPlans()
+    {
+        return [
+            'monthly' => [
+                'hash' => 'penev',
+                'label' => __('payment.monthly'),
+                'nunber_months' => 1,
+                'prices' => [
+                    'BRL' => [
+                        'origin_price' => 94.90,
+                        'descont_price' => 69.90,
+                        'currency' => 'BRL',
+                    ],
+                    'USD' => [
+                        'origin_price' => 17.08,
+                        'descont_price' => 12.47,
+                        'currency' => 'USD',
+                    ],
+                    'EUR' => [
+                        'origin_price' => 15.18,
+                        'descont_price' => 11.08,
+                        'currency' => 'EUR',
+                    ],
+                    'ARS' => [
+                        'origin_price' => 19067.31,
+                        'descont_price' => 13919.76,
+                        'currency' => 'ARS',
+                    ],
+                ],
+            ],
+            'quarterly' => [
+                'hash' => 'velit nostrud dolor in deserunt',
+                'label' => __('payment.quarterly'),
+                'nunber_months' => 3,
+                'prices' => [
+                    'BRL' => [
+                        'origin_price' => 242.00,
+                        'descont_price' => 176.66,
+                        'currency' => 'BRL',
+                    ],
+                    'USD' => [
+                        'origin_price' => 43.56,
+                        'descont_price' => 31.80,
+                        'currency' => 'USD',
+                    ],
+                    'EUR' => [
+                        'origin_price' => 38.72,
+                        'descont_price' => 28.27,
+                        'currency' => 'EUR',
+                    ],
+                    'ARS' => [
+                        'origin_price' => 48622.64,
+                        'descont_price' => 35494.69,
+                        'currency' => 'ARS',
+                    ],
+                ],
+            ],
+            'annual' => [
+                'hash' => 'cupxl',
+                'label' => __('payment.annual'),
+                'nunber_months' => 12,
+                'prices' => [
+                    'BRL' => [
+                        'origin_price' => 783.49,
+                        'descont_price' => 571.95,
+                        'currency' => 'BRL',
+                    ],
+                    'USD' => [
+                        'origin_price' => 141.03,
+                        'descont_price' => 102.95,
+                        'currency' => 'USD',
+                    ],
+                    'EUR' => [
+                        'origin_price' => 125.36,
+                        'descont_price' => 91.51,
+                        'currency' => 'EUR',
+                    ],
+                    'ARS' => [
+                        'origin_price' => 157412.81,
+                        'descont_price' => 114911.48,
+                        'currency' => 'ARS',
+                    ],
+                ],
+            ]
+        ];
     }
-
-    // Manipulação de modais e estados visuais
-
-    public function updateProgress($step)
+    public function calculateTotals()
     {
-        $this->progressStep = $step;
+
+        $plan = $this->plans[$this->selectedPlan];
+        $prices = $plan['prices'][$this->selectedCurrency];
+
+        //
+
+
+        $this->totals = [
+            'month_price' => $prices['origin_price'] / $plan['nunber_months'],
+            'month_price_discount' => $prices['descont_price'] / $plan['nunber_months'],
+            'total_price' => $prices['origin_price'],
+            'total_discount' => $prices['origin_price'] - $prices['descont_price'],
+        ];
+
+
+        $this->totals['final_price'] = $prices['descont_price'];
+
+        $this->totals = array_map(function ($value) {
+            return number_format(round($value, 1), 2, ',', '.');
+        }, $this->totals);
     }
 
     public function startCheckout()
     {
-        $this->updateProgress(4);
-        $this->showSeguranca();
+        $this->showSecure = true;
+
+        // Código comentado de validação e criação de usuário/pedido removido
+
+        $this->showLodingModal = true;
+
+
+        switch ($this->selectedPlan) {
+            case 'monthly':
+            case 'quarterly':
+                $this->showUpsellModal = true;
+
+                $offerValue = round($this->plans['annual']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['annual']['nunber_months'], 1);
+                $offerDiscont = $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price'] * $this->plans['annual']['nunber_months'] -  $offerValue * $this->plans['annual']['nunber_months'];
+
+                $this->modalData = [
+                    'actual_month_value' => $this->totals['month_price_discount'],
+                    'offer_month_value' => number_format($offerValue, 2, ',', '.'),
+                    'offer_total_discount' => number_format($offerDiscont, 2, ',', '.'),
+                    'offer_total_value' => number_format($this->plans['annual']['prices'][$this->selectedCurrency]['descont_price'], 2, ',', '.'),
+                ];
+
+                break;
+            default:
+                return $this->sendCheckout();
+        }
+
+        $this->showLodingModal = false;
     }
 
-    public function showSeguranca()
+    public function rejectUpsell()
     {
-        $this->showSegurancaVerificacao = true;
-        $this->dispatch('hideSeguranca')
-            ->later(3000);
-    }
+        $this->showUpsellModal = false;
+        $offerValue = round($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['quarterly']['nunber_months'], 1);
+        $offerDiscont = $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price'] * $this->plans['quarterly']['nunber_months'] -  $offerValue * $this->plans['quarterly']['nunber_months'];
 
-    public function hideSeguranca()
-    {
-        $this->showSegurancaVerificacao = false;
-        $this->showProcessing();
-    }
+        $this->modalData = [
+            'actual_month_value' => $this->totals['month_price_discount'],
+            'offer_month_value' => number_format($offerValue, 2, ',', '.'),
+            'offer_total_discount' => number_format($offerDiscont, 2, ',', '.'),
+            'offer_total_value' => number_format($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'], 2, ',', '.'),
+        ];
 
-    public function showProcessing()
-    {
-        $this->showProcessingModal = true;
-        $this->dispatch('hideProcessing')
-            ->later(2000);
-    }
-
-    public function hideProcessing()
-    {
-        $this->showProcessingModal = false;
-        if ($this->selectedPlan === 'monthly') {
-            $this->showUpsell();
-        } else {
+        if ($this->selectedPlan === 'quarterly') {
             $this->sendCheckout();
         }
+
+        $this->showDownsellModal = true;
     }
 
-    public function showUpsell()
-    {
-        $this->showUpsellModal = true;
-    }
 
     public function acceptUpsell()
     {
@@ -350,66 +317,11 @@ class PagePay extends Component
         $this->sendCheckout();
     }
 
-    public function rejectUpsell()
-    {
-        $this->showUpsellModal = false;
-        $this->showDownsell();
-    }
 
-    public function showDownsell()
-    {
-        $this->showDownsellModal = true;
-    }
-
-    public function acceptDownsell()
-    {
-        $this->selectedPlan = 'quarterly';
-        $this->calculateTotals();
-        $this->showDownsellModal = false;
-        $this->sendCheckout();
-    }
-
-    public function rejectDownsell()
-    {
-        $this->showDownsellModal = false;
-        $this->sendCheckout();
-    }
-
-    public function showPersonalizacao()
-    {
-        $this->showPersonalizacaoModal = true;
-        $this->dispatch('hidePersonalizacao')
-            ->later(3000);
-    }
-
-    public function hidePersonalizacao()
-    {
-        $this->showPersonalizacaoModal = false;
-    }
-
-    // Métodos de geolocalização e integração externa
-
-    public function detectCurrencyByGeolocation()
-    {
-        try {
-            $client = new Client();
-            $response = $client->request('GET', 'https://ipapi.co/json');
-            $data = json_decode($response->getBody(), true);
-
-            if (isset($data['currency']) && in_array($data['currency'], ['USD', 'EUR', 'GBP'])) {
-                $this->selectedCurrency = $data['currency'];
-                Session::put('selectedCurrency', $this->selectedCurrency);
-            }
-        } catch (\Exception $e) {
-            // Silenciar erros de geolocalização
-        }
-    }
-
-    // Processamento final do checkout
 
     public function sendCheckout()
     {
-        dd('sendCheckout');
+        //
         $client = new Client();
         $headers = [
             'Accept' => 'application/json',
@@ -442,10 +354,63 @@ class PagePay extends Component
         }
     }
 
+
     private function prepareCheckoutData()
     {
-        // Construir dados para a API baseados no estado atual
-        // ...
+        return [
+            'amount' => $this->totals['final_price'] * 100,
+            'offer_hash' => $this->plans[$this->selectedPlan]['hash'],
+            'payment_method' => 'credit_card',
+            'card' => [
+                'number' => $this->cardNumber,
+                'holder_name' => $this->cardName,
+                'exp_month' => $this->cardExpiry,
+                'exp_year' => date('Y'),
+                'cvv' => $this->cardCvv,
+            ],
+            'customer' => [
+                'name' => $this->cardName,
+                'email' => $this->email,
+                'phone_number' => $this->phone,
+            ],
+            'cart' => [
+                [
+                    'product_hash' => $this->product['hash'],
+                    'title' => $this->product['title'],
+                    'price' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['descont_price'] * 100,
+                    'quantity' => 1,
+                    'operation_type' => 1
+                ]
+            ],
+            'installments' => 1,
+        ];
+    }
+
+    public function decrementTimer()
+    {
+        if ($this->countdownSeconds > 0) {
+            $this->countdownSeconds--;
+        } elseif ($this->countdownMinutes > 0) {
+            $this->countdownSeconds = 59;
+            $this->countdownMinutes--;
+        } else {
+            // Timer has reached 00:00, do nothing or dispatch an event
+            // For example: $this->dispatch('timerEnded');
+        }
+    }
+
+     public function acceptDownsell()
+    {
+        $this->selectedPlan = 'quarterly';
+        $this->calculateTotals();
+        $this->showDownsellModal = false;
+        $this->sendCheckout();
+    }
+
+    public function rejectDownsell()
+    {
+        $this->showDownsellModal = false;
+        $this->sendCheckout();
     }
 
     // Livewire Polling para simulação de atividade
@@ -453,9 +418,6 @@ class PagePay extends Component
     {
         return [
             'echo:activity,ActivityEvent' => 'updateActivityCount',
-            'hideSeguranca' => 'hideSeguranca',
-            'hideProcessing' => 'hideProcessing',
-            'hidePersonalizacao' => 'hidePersonalizacao',
         ];
     }
 
@@ -471,6 +433,23 @@ class PagePay extends Component
         $this->selectedLanguage = $lang;
         $this->calculateTotals();
     }
+
+    public function decrementSpotsLeft()
+    {
+        if (rand(1, 5) == 1) { // 20% chance
+            if ($this->spotsLeft > 3) {
+                $this->spotsLeft--;
+                $this->dispatch('spots-updated');
+            }
+        }
+    }
+
+    public function updateLiveActivity()
+    {
+        $this->activityCount = rand(3, 25);
+        $this->dispatch('activity-updated');
+    }
+
 
     public function render()
     {

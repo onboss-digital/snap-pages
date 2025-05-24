@@ -59,10 +59,6 @@
 
 <div>
     <div class="container mx-auto px-4 py-8 max-w-4xl">
-        <!-- Progress Bar -->
-        <div class="w-full bg-gray-700 rounded-full h-2 mb-4">
-            <div class="bg-[#E50914] h-2 rounded-full w-1/4 transition-all" id="progressBar"></div>
-        </div>
 
         <!-- Header -->
         <header class="mb-8">
@@ -120,12 +116,15 @@
                         <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.select_currency') }}</h2>
 
                         <div class="relative">
-                            <select id="currency-selector" name="currency"
+                            <select id="currency-selector" name="currency" wire:model="selectedCurrency"
+                                wire:change="calculateTotals"
                                 class="w-full bg-[#2D2D2D] text-white rounded-lg p-4 border border-gray-700 appearance-none pr-10 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all">
-                                <option value="BRL">{{ __('payment.brl') }}</option>
-                                <option value="USD">{{ __('payment.usd') }}</option>
-                                <option value="EUR">{{ __('payment.eur') }}</option>
-                                <option value="GBP">{{ __('payment.gbp') }}</option>
+                                @foreach ($currencies as $code => $currency)
+                                    <option value="{{ $code }}"
+                                        {{ $selectedCurrency == $code ? 'selected' : '' }}>
+                                        {{ __($currency['label']) }}
+                                    </option>
+                                @endforeach
                             </select>
                             <div
                                 class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-white">
@@ -203,7 +202,7 @@
                                     <label
                                         class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.card_number') }}</label>
                                     <input name="card_number" type="text" id="card-number"
-                                        placeholder="0000 0000 0000 0000"
+                                        wire:model="cardNumber" placeholder="0000 0000 0000 0000"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
                                 </div>
 
@@ -212,13 +211,14 @@
                                         <label
                                             class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.expiry_date') }}</label>
                                         <input name="card_expiry" type="text" id="card-expiry"
-                                            placeholder="MM/AA"
+                                            placeholder="MM/AA" wire:model="cardExpiry"
                                             class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
                                     </div>
                                     <div>
                                         <label
                                             class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.security_code') }}</label>
                                         <input name="card_cvv" type="text" id="card-cvv" placeholder="CVV"
+                                            wire:model="cardCvv"
                                             class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
                                     </div>
                                 </div>
@@ -227,19 +227,21 @@
                                     <label
                                         class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.card_name') }}</label>
                                     <input name="card_name" type="text"
-                                        placeholder="{{ __('payment.card_name') }}"
+                                        placeholder="{{ __('payment.card_name') }}" wire:model="cardName"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
                                 </div>
                                 <div>
                                     <label
                                         class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.email') }}</label>
                                     <input name="email" type="text" placeholder="{{ __('payment.email') }}"
+                                        wire:model="email"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
                                 </div>
                                 <div>
                                     <label
                                         class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.phone') }}</label>
                                     <input name="phone" type="text" placeholder="{{ __('payment.phone') }}"
+                                        wire:model="phone"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
                                 </div>
                             </div>
@@ -272,7 +274,7 @@
 
                     <!-- Order Bump Unlock Animation -->
                     <div id="order-bump-unlock"
-                        class="bg-[#1F1F1F] rounded-xl p-5 mb-6 border border-[#E50914] hidden animate-fade">
+                        class="bg-[#1F1F1F] rounded-xl p-5 mb-6 border border-[#E50914] @if (!$bumpActive) hidden @endif animate-fade">
                         <div class="flex items-center justify-center text-center">
                             <div>
                                 <div class="text-2xl mb-2">✨</div>
@@ -366,7 +368,8 @@
 
                 <!-- Order Summary -->
                 <div class="md:col-span-1">
-                    <div class="bg-[#1F1F1F] rounded-xl p-6 sticky top-6">
+                    <div class="bg-[#1F1F1F] rounded-xl p-6 sticky top-6" wire:poll.1s="decrementTimer"
+                        wire:poll.15000ms="decrementSpotsLeft" wire:poll.8000ms="updateLiveActivity">
                         <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.order_summary') }}</h2>
 
                         <!-- Timer -->
@@ -377,7 +380,7 @@
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <span class="text-white">{{ __('payment.offer_expires') }} <span id="countdown-timer"
-                                    class="font-bold">14:22</span></span>
+                                    class="font-bold">{{ sprintf('%02d:%02d', $countdownMinutes, $countdownSeconds) }}</span></span>
                         </div>
 
                         <!-- Plan selection -->
@@ -389,7 +392,7 @@
                                 <select id="plan-selector" name="plan"
                                     class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 appearance-none pr-10 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all"
                                     wire:model="selectedPlan" wire:change="calculateTotals">
-                                    @foreach ($plans[$selectedLanguage] as $value => $plan)
+                                    @foreach ($plans as $value => $plan)
                                         <option value="{{ $value }}">{{ $plan['label'] }}</option>
                                     @endforeach
                                 </select>
@@ -406,22 +409,24 @@
                         </div>
 
                         <!-- Price anchor -->
-                        <div class="mb-4 text-center">
-                            <del class="text-gray-400 text-sm">{{ $totals['real_price'] ?? '00' }}</del>
+                        <div class="mb-2 text-center">
+                            <del class="text-gray-400 text-sm">{{ $currencies[$selectedCurrency]['symbol'] }}
+                                {{ $totals['month_price'] ?? '00' }}</del>
                             <span class="text-green-400 text-lg font-bold ml-2"
-                                id="current-price">{{ $totals['descont_price'] ?? '00' }}/mês</span>
+                                id="current-price">{{ $currencies[$selectedCurrency]['symbol'] }}
+                                {{ $totals['month_price_discount'] ?? '00' }}{{ __('payment.per_month') }}</span>
                         </div>
 
                         <!-- Price breakdown -->
-                        <div class="border-t border-b border-gray-700 py-4 mb-4 space-y-2">
+                        <div class="border-y border-gray-700 py-5 my-4 space-y-2">
                             @foreach ($listProducts as $product)
                                 <div class="flex justify-between text-gray-300">
                                     <span>{{ $product['name'] }}</span>
-                                    <span id="plan-price">{{ $product['price'] }}</span>
+                                    <span id="plan-price">{{ $product['formatted_price'] }}</span>
                                 </div>
                             @endforeach
                             <!-- Coupon area -->
-                            <div class="mt-3 pt-3 border-t border-gray-700">
+                            <div>
                                 <div class="flex space-x-2">
                                     <input name="coupon_code" type="text" id="coupon-input"
                                         placeholder="{{ __('payment.coupon_code') }}"
@@ -436,45 +441,45 @@
                             </div>
                         </div>
 
-                        <!-- Total -->
-                        <div class="flex justify-between items-center mb-6">
-                            <span class="text-lg font-medium text-white">{{ __('payment.total') }}</span>
-                            <span class="text-xl font-bold text-white"
-                                id="total-price">{{ $totals['total_price"'] ?? '00' }}</span>
-                        </div>
 
                         <!-- Resumo Final com Descontos -->
                         <div id="priceSummary" class="mb-6 p-4 bg-gray-800 rounded-lg text-white">
                             <p class="text-base font-semibold mb-2">{{ __('payment.final_summary') }}</p>
                             <div class="flex justify-between text-sm mb-1">
                                 <span>{{ __('payment.original_price') }}</span>
-                                <del class="text-gray-400">{{ $totals['original_price"'] ?? '00' }}</del>
+                                <del class="text-gray-400">{{ $currencies[$selectedCurrency]['symbol'] }}
+                                    {{ $totals['total_price'] ?? '00' }}</del>
                             </div>
-                            <div class="flex justify-between text-sm mb-1">
+                            <div class="flex justify-between text-mb mb-1">
                                 <span>{{ __('payment.discount') }}</span>
                                 <span class="text-green-400"
-                                    id="discount-amount">{{ $totals['discount"'] ?? '00' }}</span>
+                                    id="discount-amount">{{ $currencies[$selectedCurrency]['symbol'] }}
+                                    {{ $totals['total_discount'] ?? '00' }}</span>
                             </div>
                             <div class="flex justify-between text-sm font-bold mt-2 pt-2 border-t border-gray-700">
                                 <span>{{ __('payment.total_to_pay') }}</span>
-                                <span id="final-price">{{ $totals['total_pay'] ?? '00' }}</span>
+                                <span id="final-price">{{ $totals['final_price'] ?? '00' }}</span>
                                 <input type="hidden" id="input-final-price" name="final-price" value="" />
                             </div>
                         </div>
 
                         <!-- Limited spots -->
                         <div class="bg-[#2D2D2D] rounded-lg p-3 mb-4 text-center">
-                            <span class="text-yellow-400 font-medium">{!! __('payment.spots_left') !!}</span>
+                            <span class="font-medium">VAGAS RESTANTES: <strong><span
+                                        id="spots-left">{{ $spotsLeft }}</span> (do lote atual)</strong></span>
                         </div>
 
                         <!-- Live Activity Indicator -->
                         <div class="bg-[#2D2D2D] rounded-lg p-3 mb-6 text-center">
-                            <span class="text-gray-400">{!! __('payment.people_finishing') !!}</span>
+                            <span class="text-gray-400">Cerca de <strong id="activityCounter"
+                                    class="text-white">{{ $activityCount }}</strong> pessoas estão
+                                finalizando...</span>
                         </div>
 
                         <!-- Verificação de Ambiente Seguro -->
                         <div id="seguranca"
-                            class="w-full bg-gray-800 p-4 rounded-lg flex items-center gap-3 text-sm text-gray-300 animate-pulse mb-4 hidden">
+                            class="w-full bg-gray-800 p-4 rounded-lg flex items-center gap-3 text-sm text-gray-300 animate-pulse mb-4"
+                            wire:show="showSecure" x-transition.duration.500ms>
                             <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                                 <path
                                     d="M2.003 5.884L10 2l7.997 3.884v4.632c0 5.522-3.936 10.74-7.997 11.484-4.061-.744-7.997-5.962-7.997-11.484V5.884z" />
@@ -482,7 +487,7 @@
                             {{ __('payment.checking_secure') }}
                         </div>
 
-                        <button id="checkout-button" type="button"
+                        <button id="checkout-button" type="button" wire:click.prevent="startCheckout"
                             class="w-full bg-[#E50914] hover:bg-[#B8070F] text-white py-3 text-lg font-bold rounded-xl transition-all">
                             {{ __('payment.start_premium') }}
                         </button>
@@ -542,17 +547,18 @@
                 </div>
             </div>
 
-            <!-- Support Balloon - Agora oculto pois foi substituído pelo chat rápido -->
         </form>
     </div>
 
 
 
     <!-- Upsell Modal -->
-    <div id="upsell-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div id="upsell-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        wire:show="showUpsellModal" x-transition.duration.500ms>
         <div class="bg-[#1F1F1F] rounded-xl max-w-md w-full mx-4">
             <div class="p-6">
-                <button id="close-upsell" class="absolute top-3 right-3 text-gray-400 hover:text-white">
+                <button id="close-upsell" wire:click.prevent="rejectUpsell"
+                    class="absolute top-3 right-3 text-gray-400 hover:text-white">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M6 18L18 6M6 6l12 12" />
@@ -573,26 +579,40 @@
                 <div class="bg-[#2D2D2D] rounded-lg p-4 mb-4">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-gray-300">{{ __('payment.monthly') }} {{ __('payment.current') }}</span>
-                        <span class="text-white font-medium"
-                            id="upsell-monthly">R$58,99/{{ __('payment.per_month') }}</span>
+                        <span class="text-white font-medium" id="upsell-monthly">
+                            {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                            {{ $modalData['actual_month_value'] ?? 00 }} {{ __('payment.per_month') }}
+                        </span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-white font-medium">{{ __('payment.annual') }}
-                            {{ __('payment.offer') }}</span>
-                        <span class="text-[#E50914] font-bold"
-                            id="upsell-annual">R$44,24/{{ __('payment.per_month') }}</span>
+                            {{ __('payment.offer') }}
+                        </span>
+                        <span class="text-[#E50914] font-bold" id="upsell-annual">
+                            {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                            {{ $modalData['offer_month_value'] ?? 00 }}
+                            {{ __('payment.per_month') }}
+                        </span>
                     </div>
                     <div class="mt-2 text-green-500 text-sm text-right" id="upsell-savings">
-                        {{ __('payment.savings') }} R$177,00/{{ __('payment.annual') }}
+                        {{ __('payment.savings') }}
+                        {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                        {{ $modalData['offer_total_discount'] ?? 00 }}
+                        {{ __('payment.annual') }}
+                    </div>
+                    <div class="mt-2 text-sm text-right" id="upsell-savings">
+                        {{ __('payment.total_to_pay') }}
+                        {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                        {{ $modalData['offer_total_value'] ?? 00 }}
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <button id="upsell-reject"
+                    <button id="upsell-reject" wire:click.prevent="rejectUpsell"
                         class="py-3 text-white font-medium rounded-lg border border-gray-600 hover:bg-[#2D2D2D] transition-colors">
-                        {{ __('payment.keep_monthly') }}
+                        {{ __('payment.keep_plan') }}
                     </button>
-                    <button id="upsell-accept"
+                    <button id="upsell-accept" wire:click.prevent="acceptUpsell"
                         class="py-3 bg-[#E50914] hover:bg-[#B8070F] text-white font-bold rounded-lg transition-colors">
                         {{ __('payment.want_to_save') }}
                     </button>
@@ -602,10 +622,11 @@
     </div>
     <!-- Downsell Modal -->
     <div id="downsell-modal"
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if (!$showDownsellModal) hidden @endif">
         <div class="bg-[#1F1F1F] rounded-xl max-w-md w-full mx-4">
             <div class="p-6">
-                <button id="close-downsell" class="absolute top-3 right-3 text-gray-400 hover:text-white">
+                <button id="close-downsell" wire:click.prevent="rejectDownsell"
+                    class="absolute top-3 right-3 text-gray-400 hover:text-white">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M6 18L18 6M6 6l12 12" />
@@ -627,26 +648,41 @@
                 <div class="bg-[#2D2D2D] rounded-lg p-4 mb-4">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-gray-300">{{ __('payment.monthly') }} {{ __('payment.current') }}</span>
-                        <span class="text-white font-medium"
-                            id="downsell-monthly">R$58,99/{{ __('payment.per_month') }}</span>
+                        <span class="text-white font-medium" id="downsell-monthly">
+                            {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                            {{ $modalData['actual_month_value'] ?? 00 }} {{ __('payment.per_month') }}
+                        </span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-white font-medium">{{ __('payment.quarterly') }}
-                            {{ __('payment.offer') }}</span>
-                        <span class="text-[#E50914] font-bold"
-                            id="downsell-quarterly">R$50,14/{{ __('payment.per_month') }}</span>
+                            {{ __('payment.offer') }}
+                        </span>
+                        <span class="text-[#E50914] font-bold" id="downsell-quarterly">
+                            {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                            {{ $modalData['offer_month_value'] ?? 00 }}
+                            {{ __('payment.per_month') }}
+
+                        </span>
                     </div>
                     <div class="mt-2 text-green-500 text-sm text-right" id="downsell-savings">
-                        {{ __('payment.savings') }} R$26,55/{{ __('payment.quarterly') }}
+                        {{ __('payment.savings') }}
+                        {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                        {{ $modalData['offer_total_discount'] ?? 00 }}
+                        {{ __('payment.quarterly') }}
+                    </div>
+                    <div class="mt-2 text-sm text-right" id="upsell-savings">
+                        {{ __('payment.total_to_pay') }}
+                        {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                        {{ $modalData['offer_total_value'] ?? 00 }}
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <button id="downsell-reject"
+                    <button id="downsell-reject" wire:click.prevent="rejectDownsell"
                         class="py-3 text-white font-medium rounded-lg border border-gray-600 hover:bg-[#2D2D2D] transition-colors">
                         {{ __('payment.no_thanks') }}
                     </button>
-                    <button id="downsell-accept"
+                    <button id="downsell-accept" wire:click.prevent="acceptDownsell"
                         class="py-3 bg-[#E50914] hover:bg-[#B8070F] text-white font-bold rounded-lg transition-colors">
                         {{ __('payment.want_offer') }}
                     </button>
@@ -657,7 +693,7 @@
 
     <!-- Processing Modal -->
     <div id="processing-modal"
-        class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 @if (!$showProcessingModal) hidden @endif">
         <div class="bg-[#1F1F1F] rounded-xl p-8 max-w-md w-full mx-4 text-center">
             <div class="mb-4">
                 <div
@@ -671,7 +707,8 @@
 
     <!-- Personalização Modal -->
     <div id="personalizacao"
-        class="fixed inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center text-white z-50 hidden">
+        class="fixed inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center text-white z-50 "
+        wire:show="showLodingModal" x-transition.duration.500ms>
         <svg class="animate-spin h-10 w-10 text-red-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
             viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"

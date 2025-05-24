@@ -97,6 +97,7 @@ return [
     'offer' => '(oferta)',
     'savings' => 'Ahorro de',
     'keep_monthly' => 'Mantener mensual',
+    'keep_plan' => 'Mantener plan actual',
     'want_to_save' => 'Quiero ahorrar',
 
     // Downsell
