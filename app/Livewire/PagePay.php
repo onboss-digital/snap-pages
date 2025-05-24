@@ -25,10 +25,6 @@ class PagePay extends Component
     public $showDownsellModal = false;
     public $showUpsellModal = false;
 
-    // public $showProcessingModal = false;
-    // public $showPersonalizacaoModal = false;
-    // public $showSegurancaVerificacao = false;
-
     public $selectedCurrency = 'BRL';
     public $selectedLanguage = 'br';
     // Order Bump
@@ -90,11 +86,7 @@ class PagePay extends Component
     public $spotsLeft = 12;
     public $activityCount = 0;
 
-    // Modais
-
-    public $showProcessingModal = false;
-    public $showPersonalizacaoModal = false;
-    public $showSegurancaVerificacao = false;
+    // Modais duplicadas removidas
 
     // Valores calculados
     public $totals = [];
@@ -246,7 +238,7 @@ class PagePay extends Component
         $plan = $this->plans[$this->selectedPlan];
         $prices = $plan['prices'][$this->selectedCurrency];
 
-        // dd($this->plans,  $this->selectedCurrency, $prices);
+        //
 
 
         $this->totals = [
@@ -268,32 +260,7 @@ class PagePay extends Component
     {
         $this->showSecure = true;
 
-        // //validate form
-        // $this->validate([
-        //     'cardName' => 'required|string|max:255',
-        //     'cardNumber' => 'required|string|max:255',
-        //     'cardExpiry' => 'required|string|max:255',
-        //     'cardCvv' => 'required|string|max:255',
-        //     'email' => 'required|email|max:255',
-        //     'phone' => 'required|string|max:255',
-        // ]);
-
-
-        // Store user data
-        // $user = User::updateOrCreate(
-        //     ['email' => $this->email],
-        //     [
-        //         'name' => $this->cardName,
-        //         'phone' => $this->phone,
-        //     ]
-        // );
-        // // Store user order
-        // $order = Order::class::create([
-        //     'user_id' => $user->id,
-        //     'plan' => $this->selectedPlan,
-        //     'currency' => $this->selectedCurrency,
-        //     'price' => $this->totals['final_price'],
-        // ]);
+        // Código comentado de validação e criação de usuário/pedido removido
 
         $this->showLodingModal = true;
 
@@ -354,7 +321,7 @@ class PagePay extends Component
 
     public function sendCheckout()
     {
-        dd($this->prepareCheckoutData());
+        //
         $client = new Client();
         $headers = [
             'Accept' => 'application/json',
@@ -389,35 +356,34 @@ class PagePay extends Component
 
 
     private function prepareCheckoutData()
-    { {
-            return [
-                'amount' => $this->totals['final_price'] * 100,
-                'offer_hash' => $this->plans[$this->selectedPlan]['hash'],
-                'payment_method' => 'credit_card',
-                'card' => [
-                    'number' => $this->cardNumber,
-                    'holder_name' => $this->cardName,
-                    'exp_month' => $this->cardExpiry,
-                    'exp_year' => date('Y'),
-                    'cvv' => $this->cardCvv,
-                ],
-                'customer' => [
-                    'name' => $this->cardName,
-                    'email' => $this->email,
-                    'phone_number' => $this->phone,
-                ],
-                'cart' => [
-                    [
-                        'product_hash' => $this->product['hash'],
-                        'title' => $this->product['title'],
-                        'price' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency][''] * 100,
-                        'quantity' => 1,
-                        'operation_type' => 1
-                    ]
-                ],
-                'installments' => 1,
-            ];
-        }
+    {
+        return [
+            'amount' => $this->totals['final_price'] * 100,
+            'offer_hash' => $this->plans[$this->selectedPlan]['hash'],
+            'payment_method' => 'credit_card',
+            'card' => [
+                'number' => $this->cardNumber,
+                'holder_name' => $this->cardName,
+                'exp_month' => $this->cardExpiry,
+                'exp_year' => date('Y'),
+                'cvv' => $this->cardCvv,
+            ],
+            'customer' => [
+                'name' => $this->cardName,
+                'email' => $this->email,
+                'phone_number' => $this->phone,
+            ],
+            'cart' => [
+                [
+                    'product_hash' => $this->product['hash'],
+                    'title' => $this->product['title'],
+                    'price' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['descont_price'] * 100,
+                    'quantity' => 1,
+                    'operation_type' => 1
+                ]
+            ],
+            'installments' => 1,
+        ];
     }
 
     public function decrementTimer()
