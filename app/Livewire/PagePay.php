@@ -472,6 +472,35 @@ class PagePay extends Component
         $this->calculateTotals();
     }
 
+    public function decrementSpotsLeft()
+    {
+        if (rand(1, 5) == 1) { // 20% chance
+            if ($this->spotsLeft > 3) {
+                $this->spotsLeft--;
+                $this->dispatch('spots-updated');
+            }
+        }
+    }
+
+    public function updateLiveActivity()
+    {
+        $this->activityCount = rand(3, 25);
+        $this->dispatch('activity-updated');
+    }
+
+    public function decrementTimer()
+    {
+        if ($this->countdownSeconds > 0) {
+            $this->countdownSeconds--;
+        } elseif ($this->countdownMinutes > 0) {
+            $this->countdownSeconds = 59;
+            $this->countdownMinutes--;
+        } else {
+            // Timer has reached 00:00, do nothing or dispatch an event
+            // For example: $this->dispatch('timerEnded');
+        }
+    }
+
     public function render()
     {
         return view('livewire.page-pay');

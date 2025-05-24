@@ -366,7 +366,7 @@
 
                 <!-- Order Summary -->
                 <div class="md:col-span-1">
-                    <div class="bg-[#1F1F1F] rounded-xl p-6 sticky top-6">
+                    <div class="bg-[#1F1F1F] rounded-xl p-6 sticky top-6" wire:poll.1s="decrementTimer" wire:poll.15000ms="decrementSpotsLeft" wire:poll.8000ms="updateLiveActivity">
                         <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.order_summary') }}</h2>
 
                         <!-- Timer -->
@@ -377,7 +377,7 @@
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <span class="text-white">{{ __('payment.offer_expires') }} <span id="countdown-timer"
-                                    class="font-bold">14:22</span></span>
+                                    class="font-bold">{{ sprintf('%02d:%02d', $countdownMinutes, $countdownSeconds) }}</span></span>
                         </div>
 
                         <!-- Plan selection -->
@@ -464,12 +464,12 @@
 
                         <!-- Limited spots -->
                         <div class="bg-[#2D2D2D] rounded-lg p-3 mb-4 text-center">
-                            <span class="text-yellow-400 font-medium">{!! __('payment.spots_left') !!}</span>
+                            <span class="font-medium">VAGAS RESTANTES: <strong><span id="spots-left">{{ $spotsLeft }}</span> (do lote atual)</strong></span>
                         </div>
 
                         <!-- Live Activity Indicator -->
                         <div class="bg-[#2D2D2D] rounded-lg p-3 mb-6 text-center">
-                            <span class="text-gray-400">{!! __('payment.people_finishing') !!}</span>
+                            <span class="text-gray-400">Cerca de <strong id="activityCounter" class="text-white">{{ $activityCount }}</strong> pessoas estão finalizando...</span>
                         </div>
 
                         <!-- Verificação de Ambiente Seguro -->
@@ -549,10 +549,10 @@
 
 
     <!-- Upsell Modal -->
-    <div id="upsell-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div id="upsell-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if(!$showUpsellModal) hidden @endif">
         <div class="bg-[#1F1F1F] rounded-xl max-w-md w-full mx-4">
             <div class="p-6">
-                <button id="close-upsell" class="absolute top-3 right-3 text-gray-400 hover:text-white">
+                <button id="close-upsell" wire:click.prevent="rejectUpsell" class="absolute top-3 right-3 text-gray-400 hover:text-white">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M6 18L18 6M6 6l12 12" />
@@ -588,11 +588,11 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <button id="upsell-reject"
+                    <button id="upsell-reject" wire:click.prevent="rejectUpsell"
                         class="py-3 text-white font-medium rounded-lg border border-gray-600 hover:bg-[#2D2D2D] transition-colors">
                         {{ __('payment.keep_monthly') }}
                     </button>
-                    <button id="upsell-accept"
+                    <button id="upsell-accept" wire:click.prevent="acceptUpsell"
                         class="py-3 bg-[#E50914] hover:bg-[#B8070F] text-white font-bold rounded-lg transition-colors">
                         {{ __('payment.want_to_save') }}
                     </button>
@@ -602,10 +602,10 @@
     </div>
     <!-- Downsell Modal -->
     <div id="downsell-modal"
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if(!$showDownsellModal) hidden @endif">
         <div class="bg-[#1F1F1F] rounded-xl max-w-md w-full mx-4">
             <div class="p-6">
-                <button id="close-downsell" class="absolute top-3 right-3 text-gray-400 hover:text-white">
+                <button id="close-downsell" wire:click.prevent="rejectDownsell" class="absolute top-3 right-3 text-gray-400 hover:text-white">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M6 18L18 6M6 6l12 12" />
@@ -642,11 +642,11 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <button id="downsell-reject"
+                    <button id="downsell-reject" wire:click.prevent="rejectDownsell"
                         class="py-3 text-white font-medium rounded-lg border border-gray-600 hover:bg-[#2D2D2D] transition-colors">
                         {{ __('payment.no_thanks') }}
                     </button>
-                    <button id="downsell-accept"
+                    <button id="downsell-accept" wire:click.prevent="acceptDownsell"
                         class="py-3 bg-[#E50914] hover:bg-[#B8070F] text-white font-bold rounded-lg transition-colors">
                         {{ __('payment.want_offer') }}
                     </button>
@@ -657,7 +657,7 @@
 
     <!-- Processing Modal -->
     <div id="processing-modal"
-        class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 @if(!$showProcessingModal) hidden @endif">
         <div class="bg-[#1F1F1F] rounded-xl p-8 max-w-md w-full mx-4 text-center">
             <div class="mb-4">
                 <div
@@ -671,7 +671,7 @@
 
     <!-- Personalização Modal -->
     <div id="personalizacao"
-        class="fixed inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center text-white z-50 hidden">
+        class="fixed inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center text-white z-50 @if(!$showPersonalizacaoModal) hidden @endif">
         <svg class="animate-spin h-10 w-10 text-red-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
             viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
