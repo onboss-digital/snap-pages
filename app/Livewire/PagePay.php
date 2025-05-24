@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Models\Order;
+use App\Models\User;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use Livewire\Component;
@@ -11,7 +13,26 @@ use Illuminate\Support\Facades\Cache;
 
 class PagePay extends Component
 {
-    // Variáveis de estado principais (antes em JavaScript)
+
+    public $cardName, $cardNumber, $cardExpiry, $cardCvv, $email, $phone,
+        $plans, $modalData, $product;
+
+
+
+    // Modais
+    public $showSecure = false;
+    public $showLodingModal = false;
+    public $showDownsellModal = false;
+    public $showUpsellModal = false;
+
+    // public $showProcessingModal = false;
+    // public $showPersonalizacaoModal = false;
+    // public $showSegurancaVerificacao = false;
+
+    public $selectedCurrency = 'BRL';
+    public $selectedLanguage = 'br';
+    // Order Bump
+    public $selectedPlan = 'monthly';
     public $availableLanguages = [
         'br' => '🇧🇷 Português',
         'en' => '🇺🇸 English',
@@ -19,30 +40,33 @@ class PagePay extends Component
     ];
 
     // Moedas e Conversão
-    public $selectedCurrency = 'BRL';
-    public $currencySymbols = [
-        'BRL' => 'R$',
-        'USD' => '$',
-        'EUR' => '€',
-        'GBP' => '£'
-    ];
-    // Store rates against USD, e.g., ['USD' => 1.0, 'BRL' => 5.05, 'EUR' => 0.92]
-    public $conversionRates = []; // Will be populated from cache/API
-    public $exchangeRateBase = 'USD'; // Base currency for fetched rates
 
+    public $currencies = [
+        'BRL' => [
+            'symbol' => 'R$',
+            'name' => 'Real Brasileiro',
+            'code' => 'BRL',
+            'label' => "payment.brl",
+        ],
+        'USD' => [
+            'symbol' => '$',
+            'name' => 'Dólar Americano',
+            'code' => 'USD',
+            'label' => "payment.usd",
+        ],
+        'EUR' => [
+            'symbol' => '€',
+            'name' => 'Euro',
+            'code' => 'EUR',
+            'label' => "payment.eur",
+        ],
+    ];
     // Planos e preços
-    public $plans;
-    public $selectedPlan = 'monthly';
-    public $selectedLanguage = 'br';
-    public $basePrices = [
-        'monthly' => 58.99,
-        'quarterly' => 53.09, // 10% off
-        'annual' => 44.24,    // 25% off
-        'bump' => 9.99
-    ];
 
-    // Order Bump
+
+
     public $bumpActive = false;
+
     public $bump = [
         'id' => 4,
         'title' => 'Acesso Exclusivo',
@@ -50,9 +74,6 @@ class PagePay extends Component
         'price' => 9.99,
         'hash' => 'xwe2w2p4ce_lxcb1z6opc',
     ];
-
-    // Checkout progressivo
-    public $progressStep = 1;
 
     // Contador regressivo
     public $countdownMinutes = 14;
@@ -70,8 +91,7 @@ class PagePay extends Component
     public $activityCount = 0;
 
     // Modais
-    public $showUpsellModal = false;
-    public $showDownsellModal = false;
+
     public $showProcessingModal = false;
     public $showPersonalizacaoModal = false;
     public $showSegurancaVerificacao = false;
@@ -108,341 +128,219 @@ class PagePay extends Component
         ]
     ];
 
-    // Lifecycle hooks
     public function mount()
     {
-        $this->updateAndCacheConversionRates(); // Load rates first
-
-        // Inicializar planos com mesma estrutura do arquivo original
-        $this->plans = [
-            'br' => [
-                'monthly' => [
-                    'hash' => 'penev',
-                    'label' => __('payment.monthly'),
-                    'price' => 60.00,
-                ],
-                'quarterly' => [
-                    'hash' => 'velit nostrud dolor in deserunt',
-                    'label' => __('payment.quarterly'),
-                    'price' => 265.00,
-                ],
-                'annual' => [
-                    'hash' => 'cupxl',
-                    'label' => __('payment.annual'),
-                    'price' => 783.00,
-                ]
-            ],
-            'en' => [
-                'monthly' => [
-                    'hash' => 'penev',
-                    'label' => __('payment.monthly'),
-                    'price' => 60.00,
-                ],
-                'quarterly' => [
-                    'hash' => 'velit nostrud dolor in deserunt',
-                    'label' => __('payment.quarterly'),
-                    'price' => 265.00,
-                ],
-                'annual' => [
-                    'hash' => 'cupxl',
-                    'label' => __('payment.annual'),
-                    'price' => 783.00,
-                ]
-            ],
-            'es' => [
-                'monthly' => [
-                    'hash' => 'penev',
-                    'label' => __('payment.monthly'),
-                    'price' => 60.00,
-                ],
-                'quarterly' => [
-                    'hash' => 'velit nostrud dolor in deserunt',
-                    'label' => __('payment.quarterly'),
-                    'price' => 265.00,
-                ],
-                'annual' => [
-                    'hash' => 'cupxl',
-                    'label' => __('payment.annual'),
-                    'price' => 783.00,
-                ]
-            ]
-        ];
+        $this->plans = $this->getPlans();
 
         // Recuperar preferências do usuário (antes em localStorage)
         $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
         $this->selectedPlan = Session::get('selectedPlan', 'monthly');
         $this->selectedLanguage = app()->getLocale();
 
-        // Detectar localização e moeda (antes em JavaScript)
-        // This might set selectedCurrency. calculateTotals needs to be called after this.
-        $this->detectCurrencyByGeolocation(); 
-
         // Calcular valores iniciais
         $this->calculateTotals();
 
         // Iniciar contador de atividade
         $this->activityCount = rand(1, 50);
+
+        $this->product = [
+            'hash' => '3nidg2uzc0',
+            'title' => 'Criptografía anónima',
+            'cover' => 'https://d2lr0gp42cdhn1.cloudfront.net/3564404929/products/kox0kdggyhe4ggjgeilyhuqpd',
+            'product_type' => 'digital',
+            'guaranted_days' => 7,
+            'sale_page' => 'https://snaphubb.com',
+        ];
     }
 
-    private function fetchConversionRates($base = 'USD')
+
+    public function getPlans()
     {
-        // In a real app, use an API key from a service like exchangerate-api.com
-        // $apiKey = config('services.exchangerateapi.key');
-        // $url = "https://v6.exchangerate-api.com/v6/{$apiKey}/latest/{$base}";
-        
-        // Simulate API response structure:
-        $mockApiResponse = [
-            'result' => 'success',
-            'base_code' => $base,
-            'conversion_rates' => [
-                'USD' => 1.0,
-                'BRL' => 5.05, // Example: 1 USD = 5.05 BRL
-                'EUR' => 0.92, // Example: 1 USD = 0.92 EUR
-                'GBP' => 0.79, // Example: 1 USD = 0.79 GBP
-                // Add other currencies as needed by $this->currencySymbols
+        return [
+            'monthly' => [
+                'hash' => 'penev',
+                'label' => __('payment.monthly'),
+                'nunber_months' => 1,
+                'prices' => [
+                    'BRL' => [
+                        'origin_price' => 94.90,
+                        'descont_price' => 69.90,
+                        'currency' => 'BRL',
+                    ],
+                    'USD' => [
+                        'origin_price' => 17.08,
+                        'descont_price' => 12.47,
+                        'currency' => 'USD',
+                    ],
+                    'EUR' => [
+                        'origin_price' => 15.18,
+                        'descont_price' => 11.08,
+                        'currency' => 'EUR',
+                    ],
+                    'ARS' => [
+                        'origin_price' => 19067.31,
+                        'descont_price' => 13919.76,
+                        'currency' => 'ARS',
+                    ],
+                ],
+            ],
+            'quarterly' => [
+                'hash' => 'velit nostrud dolor in deserunt',
+                'label' => __('payment.quarterly'),
+                'nunber_months' => 3,
+                'prices' => [
+                    'BRL' => [
+                        'origin_price' => 242.00,
+                        'descont_price' => 176.66,
+                        'currency' => 'BRL',
+                    ],
+                    'USD' => [
+                        'origin_price' => 43.56,
+                        'descont_price' => 31.80,
+                        'currency' => 'USD',
+                    ],
+                    'EUR' => [
+                        'origin_price' => 38.72,
+                        'descont_price' => 28.27,
+                        'currency' => 'EUR',
+                    ],
+                    'ARS' => [
+                        'origin_price' => 48622.64,
+                        'descont_price' => 35494.69,
+                        'currency' => 'ARS',
+                    ],
+                ],
+            ],
+            'annual' => [
+                'hash' => 'cupxl',
+                'label' => __('payment.annual'),
+                'nunber_months' => 12,
+                'prices' => [
+                    'BRL' => [
+                        'origin_price' => 783.49,
+                        'descont_price' => 571.95,
+                        'currency' => 'BRL',
+                    ],
+                    'USD' => [
+                        'origin_price' => 141.03,
+                        'descont_price' => 102.95,
+                        'currency' => 'USD',
+                    ],
+                    'EUR' => [
+                        'origin_price' => 125.36,
+                        'descont_price' => 91.51,
+                        'currency' => 'EUR',
+                    ],
+                    'ARS' => [
+                        'origin_price' => 157412.81,
+                        'descont_price' => 114911.48,
+                        'currency' => 'ARS',
+                    ],
+                ],
             ]
         ];
-
-        if ($mockApiResponse['result'] === 'success' && isset($mockApiResponse['conversion_rates'])) {
-            return $mockApiResponse['conversion_rates'];
-        }
-        return null; // Or throw an exception
     }
-
-    public function updateAndCacheConversionRates()
-    {
-        $this->conversionRates = Cache::remember('conversion_rates_' . $this->exchangeRateBase, now()->addHours(6), function () {
-            return $this->fetchConversionRates($this->exchangeRateBase);
-        });
-
-        // If fetch/cache fails, use fallback
-        if (empty($this->conversionRates)) {
-            // This fallback should ideally match the structure of fetched rates (USD based)
-            $this->conversionRates = [
-                'USD' => 1.0, 
-                'BRL' => 5.0,  // 1 USD = 5 BRL
-                'EUR' => 0.9,  // 1 USD = 0.9 EUR
-                'GBP' => 0.8   // 1 USD = 0.8 GBP
-            ]; 
-        }
-    }
-
-    // Métodos para atualização reativa
-
-    public function updateCurrency($currency)
-    {
-        $this->selectedCurrency = $currency;
-        Session::put('selectedCurrency', $currency);
-        $this->calculateTotals();
-        $this->showPersonalizacao();
-    }
-
-    public function updatePlan($plan)
-    {
-        $this->selectedPlan = $plan;
-        Session::put('selectedPlan', $plan);
-        $this->calculateTotals();
-        $this->updateProgress(max($this->progressStep, 2));
-        $this->showPersonalizacao();
-    }
-
-    public function toggleBump()
-    {
-        // $this->bumpActive is already updated by wire:model="bumpActive" from the checkbox
-        if ($this->bumpActive) {
-            $this->updateProgress(max($this->progressStep, 3));
-            if ($this->spotsLeft > 3) { // Ensure spotsLeft doesn't go below a reasonable minimum
-                $this->spotsLeft--;
-            }
-        }
-        $this->calculateTotals();
-    }
-
-    public function applyCoupon()
-    {
-        $couponCode = strtoupper($this->couponCode);
-
-        if ($couponCode === 'DESCONTO20') {
-            $this->couponApplied = true;
-            $this->couponDiscount = 0.20; // 20% discount
-            $this->couponMessage = 'Cupom de 20% aplicado com sucesso!';
-            $this->couponMessageType = 'success';
-            $this->updateProgress(max($this->progressStep, 3));
-        } elseif ($couponCode === 'PROMO10') {
-            $this->couponApplied = true;
-            $this->couponDiscount = 0.10; // 10% discount
-            $this->couponMessage = 'Cupom de 10% aplicado com sucesso!';
-            $this->couponMessageType = 'success';
-            $this->updateProgress(max($this->progressStep, 3));
-        } else {
-            $this->couponMessage = 'Cupom inválido, tente novamente.';
-            $this->couponMessageType = 'error';
-        }
-
-        $this->calculateTotals();
-    }
-
-    // Métodos auxiliares
-
-    public function convertPrice($priceInBRL, $targetCurrency)
-    {
-        // Ensure rates are loaded, especially if mount hasn't run or cache failed.
-        if (empty($this->conversionRates) || !isset($this->conversionRates[$this->exchangeRateBase])) {
-            $this->updateAndCacheConversionRates(); // Try to load them again
-        }
-        
-        // After attempting to load, check again. If still empty, use a very basic fallback.
-        if (empty($this->conversionRates) || !isset($this->conversionRates[$this->exchangeRateBase])) {
-            if ($targetCurrency === 'BRL') return $priceInBRL;
-            // Extremely rough BRL to X, only if API/Cache totally failed
-            $fallbackRates = ['USD' => 0.20, 'EUR' => 0.18, 'GBP' => 0.15, 'BRL' => 1.0];
-            return $priceInBRL * ($fallbackRates[$targetCurrency] ?? 0.20); // Default to USD if target not in rough map
-        }
-
-        // Case 1: Target currency is the same as the API base currency (USD)
-        if ($targetCurrency === $this->exchangeRateBase) {
-            if (!isset($this->conversionRates['BRL']) || $this->conversionRates['BRL'] == 0) {
-                return $priceInBRL; // Should not happen with proper rates
-            }
-            return $priceInBRL / $this->conversionRates['BRL']; // Convert BRL to USD
-        }
-
-        // Case 2: Target currency is BRL (base price currency)
-        // Since rates are USD based, this means converting BRL -> USD -> BRL.
-        // This path is mostly for consistency in the conversion logic.
-        if ($targetCurrency === 'BRL') {
-             if (!isset($this->conversionRates['BRL']) || $this->conversionRates['BRL'] == 0) {
-                return $priceInBRL; // Avoid division by zero or if BRL rate missing
-            }
-            // Convert BRL to USD, then USD back to BRL. Result should be $priceInBRL.
-            // $priceInUSD = $priceInBRL / $this->conversionRates['BRL'];
-            // $priceInTargetBRL = $priceInUSD * $this->conversionRates['BRL'];
-            // return $priceInTargetBRL;
-            return $priceInBRL; // Direct return as no effective conversion is needed.
-        }
-        
-        // Case 3: General conversion (e.g., BRL to EUR)
-        // Requires BRL rate and target currency rate against the API base (USD)
-        if (!isset($this->conversionRates['BRL']) || !isset($this->conversionRates[$targetCurrency]) || $this->conversionRates['BRL'] == 0) {
-             // If BRL rate or target rate against USD is missing, or BRL rate is zero, cannot convert.
-             // Fallback: return original BRL price or a very rough estimate if not BRL.
-             return $targetCurrency === 'BRL' ? $priceInBRL : $priceInBRL * 0.2; // Default to a rough USD estimate
-        }
-
-        // 1. Convert original BRL price to the API's base currency (USD)
-        $priceInApiBase = $priceInBRL / $this->conversionRates['BRL']; // e.g. 58.99 BRL / 5.05 (BRL_PER_USD) = 11.68 USD
-        
-        // 2. Convert from API base currency (USD) to the target currency
-        $finalPrice = $priceInApiBase * $this->conversionRates[$targetCurrency]; // e.g. 11.68 USD * 0.92 (EUR_PER_USD) = 10.75 EUR
-        
-        return $finalPrice;
-    }
-
-    public function formatPrice($price, $currency)
-    {
-        return $this->currencySymbols[$currency] . number_format($price, 2, ',', '.');
-    }
-
     public function calculateTotals()
     {
-        $this->updateListProducts(); // Ensure listProducts is up-to-date with raw prices
 
-        $rawOriginalPrice = 0.0;
-        foreach ($this->listProducts as $product) {
-            $rawOriginalPrice += $product['raw_price'];
-        }
+        $plan = $this->plans[$this->selectedPlan];
+        $prices = $plan['prices'][$this->selectedCurrency];
 
-        // Aplicar desconto do cupom
-        $rawCouponDiscount = $this->couponApplied ? $rawOriginalPrice * $this->couponDiscount : 0.0;
-        $rawTotalPay = $rawOriginalPrice - $rawCouponDiscount;
-
-        // Price for the selected plan unit (e.g., monthly price, quarterly price)
-        $rawSelectedPlanUnitPrice = $this->convertPrice($this->basePrices[$this->selectedPlan], $this->selectedCurrency);
-        
-        // Fixed "compare at" price of 89.90 BRL, converted to the selected currency.
-        $rawRealPrice = $this->convertPrice(89.90, $this->selectedCurrency);
+        // dd($this->plans,  $this->selectedCurrency, $prices);
 
 
         $this->totals = [
-            'original_price' => $this->formatPrice($rawOriginalPrice, $this->selectedCurrency),
-            'discount' => $this->formatPrice($rawCouponDiscount, $this->selectedCurrency),
-            'total_pay' => $this->formatPrice($rawTotalPay, $this->selectedCurrency),
-            'real_price' => $this->formatPrice($rawRealPrice, $this->selectedCurrency), 
-            'descont_price' => $this->formatPrice($rawSelectedPlanUnitPrice, $this->selectedCurrency),
-            'total_price' => $this->formatPrice($rawTotalPay, $this->selectedCurrency), // Often same as total_pay
+            'month_price' => $prices['origin_price'] / $plan['nunber_months'],
+            'month_price_discount' => $prices['descont_price'] / $plan['nunber_months'],
+            'total_price' => $prices['origin_price'],
+            'total_discount' => $prices['origin_price'] - $prices['descont_price'],
         ];
-    }
 
-    public function updateListProducts()
-    {
-        $plan = $this->plans[$this->selectedLanguage][$this->selectedPlan] ?? null;
-        $this->listProducts = [];
-        if ($plan) {
-            $rawPlanPrice = $this->convertPrice($this->basePrices[$this->selectedPlan], $this->selectedCurrency);
-            $this->listProducts[] = [
-                'name' => __('payment.premium_subscription'),
-                'formatted_price' => $this->formatPrice($rawPlanPrice, $this->selectedCurrency),
-                'raw_price' => $rawPlanPrice,
-            ];
-        }
 
-        if ($this->bumpActive) {
-            $rawBumpPrice = $this->convertPrice($this->bump['price'], $this->selectedCurrency);
-            $this->listProducts[] = [
-                'name' => $this->bump['title'],
-                'formatted_price' => $this->formatPrice($rawBumpPrice, $this->selectedCurrency),
-                'raw_price' => $rawBumpPrice,
-            ];
-        }
-    }
+        $this->totals['final_price'] = $prices['descont_price'];
 
-    // Manipulação de modais e estados visuais
-
-    public function updateProgress($step)
-    {
-        $this->progressStep = $step;
+        $this->totals = array_map(function ($value) {
+            return number_format(round($value, 1), 2, ',', '.');
+        }, $this->totals);
     }
 
     public function startCheckout()
     {
-        $this->updateProgress(4);
-        $this->showSeguranca();
+        $this->showSecure = true;
+
+        // //validate form
+        // $this->validate([
+        //     'cardName' => 'required|string|max:255',
+        //     'cardNumber' => 'required|string|max:255',
+        //     'cardExpiry' => 'required|string|max:255',
+        //     'cardCvv' => 'required|string|max:255',
+        //     'email' => 'required|email|max:255',
+        //     'phone' => 'required|string|max:255',
+        // ]);
+
+
+        // Store user data
+        // $user = User::updateOrCreate(
+        //     ['email' => $this->email],
+        //     [
+        //         'name' => $this->cardName,
+        //         'phone' => $this->phone,
+        //     ]
+        // );
+        // // Store user order
+        // $order = Order::class::create([
+        //     'user_id' => $user->id,
+        //     'plan' => $this->selectedPlan,
+        //     'currency' => $this->selectedCurrency,
+        //     'price' => $this->totals['final_price'],
+        // ]);
+
+        $this->showLodingModal = true;
+
+
+        switch ($this->selectedPlan) {
+            case 'monthly':
+            case 'quarterly':
+                $this->showUpsellModal = true;
+
+                $offerValue = round($this->plans['annual']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['annual']['nunber_months'], 1);
+                $offerDiscont = $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price'] * $this->plans['annual']['nunber_months'] -  $offerValue * $this->plans['annual']['nunber_months'];
+
+                $this->modalData = [
+                    'actual_month_value' => $this->totals['month_price_discount'],
+                    'offer_month_value' => number_format($offerValue, 2, ',', '.'),
+                    'offer_total_discount' => number_format($offerDiscont, 2, ',', '.'),
+                    'offer_total_value' => number_format($this->plans['annual']['prices'][$this->selectedCurrency]['descont_price'], 2, ',', '.'),
+                ];
+
+                break;
+            default:
+                return $this->sendCheckout();
+        }
+
+        $this->showLodingModal = false;
     }
 
-    public function showSeguranca()
+    public function rejectUpsell()
     {
-        $this->showSegurancaVerificacao = true;
-        $this->dispatch('hideSeguranca')
-            ->later(3000);
-    }
+        $this->showUpsellModal = false;
+        $offerValue = round($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['quarterly']['nunber_months'], 1);
+        $offerDiscont = $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price'] * $this->plans['quarterly']['nunber_months'] -  $offerValue * $this->plans['quarterly']['nunber_months'];
 
-    public function hideSeguranca()
-    {
-        $this->showSegurancaVerificacao = false;
-        $this->showProcessing();
-    }
+        $this->modalData = [
+            'actual_month_value' => $this->totals['month_price_discount'],
+            'offer_month_value' => number_format($offerValue, 2, ',', '.'),
+            'offer_total_discount' => number_format($offerDiscont, 2, ',', '.'),
+            'offer_total_value' => number_format($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'], 2, ',', '.'),
+        ];
 
-    public function showProcessing()
-    {
-        $this->showProcessingModal = true;
-        $this->dispatch('hideProcessing')
-            ->later(2000);
-    }
-
-    public function hideProcessing()
-    {
-        $this->showProcessingModal = false;
-        if ($this->selectedPlan === 'monthly') {
-            $this->showUpsell();
-        } else {
+        if ($this->selectedPlan === 'quarterly') {
             $this->sendCheckout();
         }
+
+        $this->showDownsellModal = true;
     }
 
-    public function showUpsell()
-    {
-        $this->showUpsellModal = true;
-    }
 
     public function acceptUpsell()
     {
@@ -452,66 +350,11 @@ class PagePay extends Component
         $this->sendCheckout();
     }
 
-    public function rejectUpsell()
-    {
-        $this->showUpsellModal = false;
-        $this->showDownsell();
-    }
 
-    public function showDownsell()
-    {
-        $this->showDownsellModal = true;
-    }
-
-    public function acceptDownsell()
-    {
-        $this->selectedPlan = 'quarterly';
-        $this->calculateTotals();
-        $this->showDownsellModal = false;
-        $this->sendCheckout();
-    }
-
-    public function rejectDownsell()
-    {
-        $this->showDownsellModal = false;
-        $this->sendCheckout();
-    }
-
-    public function showPersonalizacao()
-    {
-        $this->showPersonalizacaoModal = true;
-        $this->dispatch('hidePersonalizacao')
-            ->later(3000);
-    }
-
-    public function hidePersonalizacao()
-    {
-        $this->showPersonalizacaoModal = false;
-    }
-
-    // Métodos de geolocalização e integração externa
-
-    public function detectCurrencyByGeolocation()
-    {
-        try {
-            $client = new Client();
-            $response = $client->request('GET', 'https://ipapi.co/json');
-            $data = json_decode($response->getBody(), true);
-
-            if (isset($data['currency']) && in_array($data['currency'], ['USD', 'EUR', 'GBP'])) {
-                $this->selectedCurrency = $data['currency'];
-                Session::put('selectedCurrency', $this->selectedCurrency);
-            }
-        } catch (\Exception $e) {
-            // Silenciar erros de geolocalização
-        }
-    }
-
-    // Processamento final do checkout
 
     public function sendCheckout()
     {
-        dd('sendCheckout');
+        dd($this->prepareCheckoutData());
         $client = new Client();
         $headers = [
             'Accept' => 'application/json',
@@ -544,10 +387,64 @@ class PagePay extends Component
         }
     }
 
+
     private function prepareCheckoutData()
+    { {
+            return [
+                'amount' => $this->totals['final_price'] * 100,
+                'offer_hash' => $this->plans[$this->selectedPlan]['hash'],
+                'payment_method' => 'credit_card',
+                'card' => [
+                    'number' => $this->cardNumber,
+                    'holder_name' => $this->cardName,
+                    'exp_month' => $this->cardExpiry,
+                    'exp_year' => date('Y'),
+                    'cvv' => $this->cardCvv,
+                ],
+                'customer' => [
+                    'name' => $this->cardName,
+                    'email' => $this->email,
+                    'phone_number' => $this->phone,
+                ],
+                'cart' => [
+                    [
+                        'product_hash' => $this->product['hash'],
+                        'title' => $this->product['title'],
+                        'price' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency][''] * 100,
+                        'quantity' => 1,
+                        'operation_type' => 1
+                    ]
+                ],
+                'installments' => 1,
+            ];
+        }
+    }
+
+    public function decrementTimer()
     {
-        // Construir dados para a API baseados no estado atual
-        // ...
+        if ($this->countdownSeconds > 0) {
+            $this->countdownSeconds--;
+        } elseif ($this->countdownMinutes > 0) {
+            $this->countdownSeconds = 59;
+            $this->countdownMinutes--;
+        } else {
+            // Timer has reached 00:00, do nothing or dispatch an event
+            // For example: $this->dispatch('timerEnded');
+        }
+    }
+
+     public function acceptDownsell()
+    {
+        $this->selectedPlan = 'quarterly';
+        $this->calculateTotals();
+        $this->showDownsellModal = false;
+        $this->sendCheckout();
+    }
+
+    public function rejectDownsell()
+    {
+        $this->showDownsellModal = false;
+        $this->sendCheckout();
     }
 
     // Livewire Polling para simulação de atividade
@@ -555,9 +452,6 @@ class PagePay extends Component
     {
         return [
             'echo:activity,ActivityEvent' => 'updateActivityCount',
-            'hideSeguranca' => 'hideSeguranca',
-            'hideProcessing' => 'hideProcessing',
-            'hidePersonalizacao' => 'hidePersonalizacao',
         ];
     }
 
@@ -590,18 +484,6 @@ class PagePay extends Component
         $this->dispatch('activity-updated');
     }
 
-    public function decrementTimer()
-    {
-        if ($this->countdownSeconds > 0) {
-            $this->countdownSeconds--;
-        } elseif ($this->countdownMinutes > 0) {
-            $this->countdownSeconds = 59;
-            $this->countdownMinutes--;
-        } else {
-            // Timer has reached 00:00, do nothing or dispatch an event
-            // For example: $this->dispatch('timerEnded');
-        }
-    }
 
     public function render()
     {
