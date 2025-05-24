@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Payment page script loaded');
-
     // Livewire event listeners
     if (typeof Livewire !== 'undefined') {
         Livewire.on('spots-updated', () => {
