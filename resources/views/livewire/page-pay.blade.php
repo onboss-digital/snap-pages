@@ -59,10 +59,6 @@
 
 <div>
     <div class="container mx-auto px-4 py-8 max-w-4xl">
-        <!-- Progress Bar -->
-        <div class="w-full bg-gray-700 rounded-full h-2 mb-4">
-            <div class="bg-[#E50914] h-2 rounded-full w-1/4 transition-all" id="progressBar"></div>
-        </div>
 
         <!-- Header -->
         <header class="mb-8">
@@ -272,7 +268,7 @@
 
                     <!-- Order Bump Unlock Animation -->
                     <div id="order-bump-unlock"
-                        class="bg-[#1F1F1F] rounded-xl p-5 mb-6 border border-[#E50914] hidden animate-fade">
+                        class="bg-[#1F1F1F] rounded-xl p-5 mb-6 border border-[#E50914] @if(!$bumpActive) hidden @endif animate-fade">
                         <div class="flex items-center justify-center text-center">
                             <div>
                                 <div class="text-2xl mb-2">✨</div>
@@ -482,7 +478,7 @@
                             {{ __('payment.checking_secure') }}
                         </div>
 
-                        <button id="checkout-button" type="button"
+                        <button id="checkout-button" type="button" wire:click.prevent="startCheckout"
                             class="w-full bg-[#E50914] hover:bg-[#B8070F] text-white py-3 text-lg font-bold rounded-xl transition-all">
                             {{ __('payment.start_premium') }}
                         </button>

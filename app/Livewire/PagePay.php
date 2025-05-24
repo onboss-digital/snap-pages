@@ -7,6 +7,7 @@ use GuzzleHttp\Psr7\Request;
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Cache;
 
 class PagePay extends Component
 {
@@ -25,12 +26,9 @@ class PagePay extends Component
         'EUR' => '€',
         'GBP' => '£'
     ];
-    public $conversionRates = [
-        'BRL' => 1.0,
-        'USD' => 0.17,
-        'EUR' => 0.16,
-        'GBP' => 0.13
-    ];
+    // Store rates against USD, e.g., ['USD' => 1.0, 'BRL' => 5.05, 'EUR' => 0.92]
+    public $conversionRates = []; // Will be populated from cache/API
+    public $exchangeRateBase = 'USD'; // Base currency for fetched rates
 
     // Planos e preços
     public $plans;
@@ -113,6 +111,8 @@ class PagePay extends Component
     // Lifecycle hooks
     public function mount()
     {
+        $this->updateAndCacheConversionRates(); // Load rates first
+
         // Inicializar planos com mesma estrutura do arquivo original
         $this->plans = [
             'br' => [
@@ -174,13 +174,57 @@ class PagePay extends Component
         $this->selectedLanguage = app()->getLocale();
 
         // Detectar localização e moeda (antes em JavaScript)
-        $this->detectCurrencyByGeolocation();
+        // This might set selectedCurrency. calculateTotals needs to be called after this.
+        $this->detectCurrencyByGeolocation(); 
 
         // Calcular valores iniciais
         $this->calculateTotals();
 
         // Iniciar contador de atividade
         $this->activityCount = rand(1, 50);
+    }
+
+    private function fetchConversionRates($base = 'USD')
+    {
+        // In a real app, use an API key from a service like exchangerate-api.com
+        // $apiKey = config('services.exchangerateapi.key');
+        // $url = "https://v6.exchangerate-api.com/v6/{$apiKey}/latest/{$base}";
+        
+        // Simulate API response structure:
+        $mockApiResponse = [
+            'result' => 'success',
+            'base_code' => $base,
+            'conversion_rates' => [
+                'USD' => 1.0,
+                'BRL' => 5.05, // Example: 1 USD = 5.05 BRL
+                'EUR' => 0.92, // Example: 1 USD = 0.92 EUR
+                'GBP' => 0.79, // Example: 1 USD = 0.79 GBP
+                // Add other currencies as needed by $this->currencySymbols
+            ]
+        ];
+
+        if ($mockApiResponse['result'] === 'success' && isset($mockApiResponse['conversion_rates'])) {
+            return $mockApiResponse['conversion_rates'];
+        }
+        return null; // Or throw an exception
+    }
+
+    public function updateAndCacheConversionRates()
+    {
+        $this->conversionRates = Cache::remember('conversion_rates_' . $this->exchangeRateBase, now()->addHours(6), function () {
+            return $this->fetchConversionRates($this->exchangeRateBase);
+        });
+
+        // If fetch/cache fails, use fallback
+        if (empty($this->conversionRates)) {
+            // This fallback should ideally match the structure of fetched rates (USD based)
+            $this->conversionRates = [
+                'USD' => 1.0, 
+                'BRL' => 5.0,  // 1 USD = 5 BRL
+                'EUR' => 0.9,  // 1 USD = 0.9 EUR
+                'GBP' => 0.8   // 1 USD = 0.8 GBP
+            ]; 
+        }
     }
 
     // Métodos para atualização reativa
@@ -204,10 +248,12 @@ class PagePay extends Component
 
     public function toggleBump()
     {
-        $this->bumpActive = !$this->bumpActive;
+        // $this->bumpActive is already updated by wire:model="bumpActive" from the checkbox
         if ($this->bumpActive) {
             $this->updateProgress(max($this->progressStep, 3));
-            $this->spotsLeft--;
+            if ($this->spotsLeft > 3) { // Ensure spotsLeft doesn't go below a reasonable minimum
+                $this->spotsLeft--;
+            }
         }
         $this->calculateTotals();
     }
@@ -238,9 +284,58 @@ class PagePay extends Component
 
     // Métodos auxiliares
 
-    public function convertPrice($priceInBRL, $currency)
+    public function convertPrice($priceInBRL, $targetCurrency)
     {
-        return $priceInBRL * $this->conversionRates[$currency];
+        // Ensure rates are loaded, especially if mount hasn't run or cache failed.
+        if (empty($this->conversionRates) || !isset($this->conversionRates[$this->exchangeRateBase])) {
+            $this->updateAndCacheConversionRates(); // Try to load them again
+        }
+        
+        // After attempting to load, check again. If still empty, use a very basic fallback.
+        if (empty($this->conversionRates) || !isset($this->conversionRates[$this->exchangeRateBase])) {
+            if ($targetCurrency === 'BRL') return $priceInBRL;
+            // Extremely rough BRL to X, only if API/Cache totally failed
+            $fallbackRates = ['USD' => 0.20, 'EUR' => 0.18, 'GBP' => 0.15, 'BRL' => 1.0];
+            return $priceInBRL * ($fallbackRates[$targetCurrency] ?? 0.20); // Default to USD if target not in rough map
+        }
+
+        // Case 1: Target currency is the same as the API base currency (USD)
+        if ($targetCurrency === $this->exchangeRateBase) {
+            if (!isset($this->conversionRates['BRL']) || $this->conversionRates['BRL'] == 0) {
+                return $priceInBRL; // Should not happen with proper rates
+            }
+            return $priceInBRL / $this->conversionRates['BRL']; // Convert BRL to USD
+        }
+
+        // Case 2: Target currency is BRL (base price currency)
+        // Since rates are USD based, this means converting BRL -> USD -> BRL.
+        // This path is mostly for consistency in the conversion logic.
+        if ($targetCurrency === 'BRL') {
+             if (!isset($this->conversionRates['BRL']) || $this->conversionRates['BRL'] == 0) {
+                return $priceInBRL; // Avoid division by zero or if BRL rate missing
+            }
+            // Convert BRL to USD, then USD back to BRL. Result should be $priceInBRL.
+            // $priceInUSD = $priceInBRL / $this->conversionRates['BRL'];
+            // $priceInTargetBRL = $priceInUSD * $this->conversionRates['BRL'];
+            // return $priceInTargetBRL;
+            return $priceInBRL; // Direct return as no effective conversion is needed.
+        }
+        
+        // Case 3: General conversion (e.g., BRL to EUR)
+        // Requires BRL rate and target currency rate against the API base (USD)
+        if (!isset($this->conversionRates['BRL']) || !isset($this->conversionRates[$targetCurrency]) || $this->conversionRates['BRL'] == 0) {
+             // If BRL rate or target rate against USD is missing, or BRL rate is zero, cannot convert.
+             // Fallback: return original BRL price or a very rough estimate if not BRL.
+             return $targetCurrency === 'BRL' ? $priceInBRL : $priceInBRL * 0.2; // Default to a rough USD estimate
+        }
+
+        // 1. Convert original BRL price to the API's base currency (USD)
+        $priceInApiBase = $priceInBRL / $this->conversionRates['BRL']; // e.g. 58.99 BRL / 5.05 (BRL_PER_USD) = 11.68 USD
+        
+        // 2. Convert from API base currency (USD) to the target currency
+        $finalPrice = $priceInApiBase * $this->conversionRates[$targetCurrency]; // e.g. 11.68 USD * 0.92 (EUR_PER_USD) = 10.75 EUR
+        
+        return $finalPrice;
     }
 
     public function formatPrice($price, $currency)
@@ -250,26 +345,31 @@ class PagePay extends Component
 
     public function calculateTotals()
     {
-        $this->updateListProducts();
+        $this->updateListProducts(); // Ensure listProducts is up-to-date with raw prices
 
-        $originalPrice = 0.0;
+        $rawOriginalPrice = 0.0;
         foreach ($this->listProducts as $product) {
-            $originalPrice += floatval(str_replace([',', 'R$', '$', '€', '£'], ['.', '', '', '', ''], $product['price']));
+            $rawOriginalPrice += $product['raw_price'];
         }
 
         // Aplicar desconto do cupom
-        $discount = $this->couponApplied ? $originalPrice * $this->couponDiscount : 0.0;
-        $totalPay = $originalPrice - $discount;
+        $rawCouponDiscount = $this->couponApplied ? $rawOriginalPrice * $this->couponDiscount : 0.0;
+        $rawTotalPay = $rawOriginalPrice - $rawCouponDiscount;
 
-        $planPrice = $this->convertPrice($this->basePrices[$this->selectedPlan], $this->selectedCurrency);
+        // Price for the selected plan unit (e.g., monthly price, quarterly price)
+        $rawSelectedPlanUnitPrice = $this->convertPrice($this->basePrices[$this->selectedPlan], $this->selectedCurrency);
+        
+        // Fixed "compare at" price of 89.90 BRL, converted to the selected currency.
+        $rawRealPrice = $this->convertPrice(89.90, $this->selectedCurrency);
+
 
         $this->totals = [
-            'original_price' => $this->formatPrice($originalPrice, $this->selectedCurrency),
-            'discount' => $this->formatPrice($discount, $this->selectedCurrency),
-            'total_pay' => $this->formatPrice($totalPay, $this->selectedCurrency),
-            'real_price' => $this->formatPrice(89.90, $this->selectedCurrency), // Preço "original" antes do desconto
-            'descont_price' => $this->formatPrice($planPrice, $this->selectedCurrency),
-            'total_price' => $this->formatPrice($totalPay, $this->selectedCurrency),
+            'original_price' => $this->formatPrice($rawOriginalPrice, $this->selectedCurrency),
+            'discount' => $this->formatPrice($rawCouponDiscount, $this->selectedCurrency),
+            'total_pay' => $this->formatPrice($rawTotalPay, $this->selectedCurrency),
+            'real_price' => $this->formatPrice($rawRealPrice, $this->selectedCurrency), 
+            'descont_price' => $this->formatPrice($rawSelectedPlanUnitPrice, $this->selectedCurrency),
+            'total_price' => $this->formatPrice($rawTotalPay, $this->selectedCurrency), // Often same as total_pay
         ];
     }
 
@@ -278,18 +378,20 @@ class PagePay extends Component
         $plan = $this->plans[$this->selectedLanguage][$this->selectedPlan] ?? null;
         $this->listProducts = [];
         if ($plan) {
-            $planPrice = $this->convertPrice($this->basePrices[$this->selectedPlan], $this->selectedCurrency);
+            $rawPlanPrice = $this->convertPrice($this->basePrices[$this->selectedPlan], $this->selectedCurrency);
             $this->listProducts[] = [
                 'name' => __('payment.premium_subscription'),
-                'price' => $this->formatPrice($planPrice, $this->selectedCurrency),
+                'formatted_price' => $this->formatPrice($rawPlanPrice, $this->selectedCurrency),
+                'raw_price' => $rawPlanPrice,
             ];
         }
 
         if ($this->bumpActive) {
-            $bumpPrice = $this->convertPrice($this->bump['price'], $this->selectedCurrency);
+            $rawBumpPrice = $this->convertPrice($this->bump['price'], $this->selectedCurrency);
             $this->listProducts[] = [
                 'name' => $this->bump['title'],
-                'price' => $this->formatPrice($bumpPrice, $this->selectedCurrency),
+                'formatted_price' => $this->formatPrice($rawBumpPrice, $this->selectedCurrency),
+                'raw_price' => $rawBumpPrice,
             ];
         }
     }
