@@ -168,7 +168,7 @@ class PagePay extends Component
                 'prices' => [
                     'BRL' => [
                         'origin_price' => 94.90,
-                        'descont_price' => 69.90,
+                        'descont_price' => 5.90,
                         'currency' => 'BRL',
                     ],
                     'USD' => [
@@ -195,7 +195,7 @@ class PagePay extends Component
                 'prices' => [
                     'BRL' => [
                         'origin_price' => 242.00,
-                        'descont_price' => 176.66,
+                        'descont_price' => 6.90,
                         'currency' => 'BRL',
                     ],
                     'USD' => [
@@ -222,7 +222,7 @@ class PagePay extends Component
                 'prices' => [
                     'BRL' => [
                         'origin_price' => 783.49,
-                        'descont_price' => 571.95,
+                        'descont_price' => 7.90,
                         'currency' => 'BRL',
                     ],
                     'USD' => [
