@@ -344,24 +344,44 @@ class PagePay extends Component
         // Construção do corpo da requisição baseado no estado atual
         // ...código existente para montar o corpo da requisição...
 
+        $checkoutData = $this->prepareCheckoutData(); // Define $checkoutData before try block
+
+        // Create a deep copy for logging and mask sensitive data
+        $loggedData = $checkoutData;
+        if (isset($loggedData['card']['number'])) {
+            $loggedData['card']['number'] = '**** **** **** ' . substr($checkoutData['card']['number'], -4);
+        }
+        if (isset($loggedData['card']['cvv'])) {
+            $loggedData['card']['cvv'] = '***';
+        }
+
         try {
+            Log::channel('payment_checkout')->info('Preparing TriboPay Checkout. Data:', $loggedData);
+
             $request = new Request(
                 'POST',
                 'https://api.tribopay.com.br/api/public/v1/transactions?api_token=lqyOgcoAfhxZkJ2bM606vGhmTur4I02USzs8l6N0JoH0ToN1zv31tZVDnTZU',
                 $headers,
-                json_encode($this->prepareCheckoutData())
+                json_encode($checkoutData) // Use the variable that was logged
             );
 
             $res = $client->sendAsync($request)->wait();
+            $responseBody = $res->getBody()->getContents(); // Read body once
 
             // Log da resposta da API
-            Log::info('TriboPay API Response', [ // Use imported Log
-                'response' => $res->getBody()->getContents(),
+            Log::channel('payment_checkout')->info('TriboPay API Response:', [
+                'status' => $res->getStatusCode(),
+                'body' => $responseBody,
                 'timestamp' => now()
             ]);
 
             return redirect('http://web.snaphubb.online/ups-1');
         } catch (\Exception $e) {
+            Log::channel('payment_checkout')->error('TriboPay API Error:', [
+                'message' => $e->getMessage(),
+                'request_data' => $loggedData, // Log masked data
+                // 'trace' => $e->getTraceAsString(), // Optional: trace can be very verbose
+            ]);
             // Lidar com erros de API
             $this->addError('payment', 'Ocorreu um erro ao processar o pagamento: ' . $e->getMessage());
         }
@@ -373,6 +393,16 @@ class PagePay extends Component
         // Convert formatted string "1.234,50" or "69,90" to float 1234.50 or 69.90
         $numeric_final_price = floatval(str_replace(',', '.', str_replace('.', '', $this->totals['final_price'])));
 
+        $expMonth = null;
+        $expYear = null;
+        if ($this->cardExpiry) {
+            $parts = explode('/', $this->cardExpiry);
+            $expMonth = $parts[0] ?? null;
+            if (!empty($parts[1])) {
+                $expYear = (strlen($parts[1]) == 2) ? '20' . $parts[1] : $parts[1];
+            }
+        }
+
         return [
             'amount' => $numeric_final_price * 100,
             'offer_hash' => $this->plans[$this->selectedPlan]['hash'],
@@ -380,8 +410,8 @@ class PagePay extends Component
             'card' => [
                 'number' => $this->cardNumber,
                 'holder_name' => $this->cardName,
-                'exp_month' => $this->cardExpiry,
-                'exp_year' => date('Y'),
+                'exp_month' => $expMonth, // Use parsed month
+                'exp_year' => $expYear,   // Use parsed year
                 'cvv' => $this->cardCvv,
             ],
             'customer' => [
