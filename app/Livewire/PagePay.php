@@ -22,6 +22,8 @@ class PagePay extends Component
     public $showDownsellModal = false;
     public $showUpsellModal = false;
 
+    public $showProcessingModal = false;
+
     public $selectedCurrency = 'BRL';
     public $selectedLanguage = 'br';
     // Order Bump
@@ -126,6 +128,14 @@ class PagePay extends Component
     {
         $this->plans = $this->getPlans();
 
+        // Debug
+        // $this->cardName = 'John Doe';
+        // $this->cardNumber = '4111111111111111';
+        // $this->cardExpiry = '12/25';
+        // $this->cardCvv = '123';
+        // $this->email = 'john@mail.com';
+        // $this->phone = '+5511999999999';
+
         // Recuperar preferências do usuário (antes em localStorage)
         $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
         $this->selectedPlan = Session::get('selectedPlan', 'monthly');
@@ -138,12 +148,12 @@ class PagePay extends Component
         $this->activityCount = rand(1, 50);
 
         $this->product = [
-            'hash' => '3nidg2uzc0',
-            'title' => 'Criptografía anónima',
-            'cover' => 'https://d2lr0gp42cdhn1.cloudfront.net/3564404929/products/kox0kdggyhe4ggjgeilyhuqpd',
+            'hash' => 'xwe2w2p4ce',
+            'title' => 'Snaphubb',
+            'cover' => 'https://d2lr0gp42cdhn1.cloudfront.net/3564404929/products/vyvnybkpwbuvkmt4m2pphh6is',
             'product_type' => 'digital',
             'guaranted_days' => 7,
-            'sale_page' => 'https://snaphubb.com',
+            'sale_page' => 'https://snaphubb.online',
         ];
     }
 
@@ -334,6 +344,8 @@ class PagePay extends Component
 
     public function sendCheckout()
     {
+        $this->showDownsellModal = $this->showUpsellModal = false;
+        $this->showProcessingModal = true;
         //
         $client = new Client();
         $headers = [
@@ -368,14 +380,20 @@ class PagePay extends Component
             $res = $client->sendAsync($request)->wait();
             $responseBody = $res->getBody()->getContents(); // Read body once
 
+            // Debugging point
+
+            $dataResponse = json_decode($responseBody, true);
+
+
             // Log da resposta da API
             Log::channel('payment_checkout')->info('TriboPay API Response:', [
                 'status' => $res->getStatusCode(),
                 'body' => $responseBody,
                 'timestamp' => now()
             ]);
+            $domain = urlencode(env('APP_URL'));
 
-            return redirect('http://web.snaphubb.online/ups-1');
+            return redirect("http://web.snaphubb.online/ups-1/?fpay={$dataResponse['transaction']}&domain={$domain}");
         } catch (\Exception $e) {
             Log::channel('payment_checkout')->error('TriboPay API Error:', [
                 'message' => $e->getMessage(),
@@ -445,7 +463,7 @@ class PagePay extends Component
         }
     }
 
-     public function acceptDownsell()
+    public function acceptDownsell()
     {
         $this->selectedPlan = 'quarterly';
         $this->calculateTotals();
