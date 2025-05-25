@@ -2,14 +2,11 @@
 
 namespace App\Livewire;
 
-use App\Models\Order;
-use App\Models\User;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log; // Keep Log as it's used with full namespace
 
 class PagePay extends Component
 {
@@ -24,6 +21,8 @@ class PagePay extends Component
     public $showLodingModal = false;
     public $showDownsellModal = false;
     public $showUpsellModal = false;
+
+    public $showProcessingModal = false;
 
     public $selectedCurrency = 'BRL';
     public $selectedLanguage = 'br';
@@ -75,13 +74,6 @@ class PagePay extends Component
     public $countdownMinutes = 14;
     public $countdownSeconds = 22;
 
-    // Cupom
-    public $couponCode = '';
-    public $couponApplied = false;
-    public $couponDiscount = 0;
-    public $couponMessage = '';
-    public $couponMessageType = '';
-
     // Elementos de urgência
     public $spotsLeft = 12;
     public $activityCount = 0;
@@ -90,7 +82,7 @@ class PagePay extends Component
 
     // Valores calculados
     public $totals = [];
-    public $listProducts = [];
+    // public $listProducts = []; // Removed as it's unused and never populated
 
     // Dados de benefícios
     public $benefits = [
@@ -120,9 +112,29 @@ class PagePay extends Component
         ]
     ];
 
+    protected function rules()
+    {
+        return [
+            'cardName' => 'required|string|max:255',
+            'cardNumber' => 'required|numeric|digits_between:13,19',
+            'cardExpiry' => ['required', 'string', 'regex:/^(0[1-9]|1[0-2])\/?([0-9]{2})$/'],
+            'cardCvv' => 'required|numeric|digits_between:3,4',
+            'email' => 'required|email',
+            'phone' => ['required', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
+        ];
+    }
+
     public function mount()
     {
         $this->plans = $this->getPlans();
+
+        // Debug
+        // $this->cardName = 'John Doe';
+        // $this->cardNumber = '4111111111111111';
+        // $this->cardExpiry = '12/25';
+        // $this->cardCvv = '123';
+        // $this->email = 'john@mail.com';
+        // $this->phone = '+5511999999999';
 
         // Recuperar preferências do usuário (antes em localStorage)
         $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
@@ -136,12 +148,12 @@ class PagePay extends Component
         $this->activityCount = rand(1, 50);
 
         $this->product = [
-            'hash' => '3nidg2uzc0',
-            'title' => 'Criptografía anónima',
-            'cover' => 'https://d2lr0gp42cdhn1.cloudfront.net/3564404929/products/kox0kdggyhe4ggjgeilyhuqpd',
+            'hash' => 'xwe2w2p4ce',
+            'title' => 'Snaphubb',
+            'cover' => 'https://d2lr0gp42cdhn1.cloudfront.net/3564404929/products/vyvnybkpwbuvkmt4m2pphh6is',
             'product_type' => 'digital',
             'guaranted_days' => 7,
-            'sale_page' => 'https://snaphubb.com',
+            'sale_page' => 'https://snaphubb.online',
         ];
     }
 
@@ -258,10 +270,21 @@ class PagePay extends Component
 
     public function startCheckout()
     {
+        // Clean inputs before validation
+        if ($this->cardNumber) {
+            $this->cardNumber = preg_replace('/\D/', '', $this->cardNumber);
+        }
+        if ($this->cardCvv) {
+            $this->cardCvv = preg_replace('/\D/', '', $this->cardCvv);
+        }
+        if ($this->phone) {
+            $this->phone = preg_replace('/[^0-9+]/', '', $this->phone); // Keep + for international
+        }
+        // $this->cardExpiry is usually fine as MM/YY for regex (e.g., "12/25")
+
+        $this->validate(); // Perform validation
+
         $this->showSecure = true;
-
-        // Código comentado de validação e criação de usuário/pedido removido
-
         $this->showLodingModal = true;
 
 
@@ -321,6 +344,8 @@ class PagePay extends Component
 
     public function sendCheckout()
     {
+        $this->showDownsellModal = $this->showUpsellModal = false;
+        $this->showProcessingModal = true;
         //
         $client = new Client();
         $headers = [
@@ -331,24 +356,50 @@ class PagePay extends Component
         // Construção do corpo da requisição baseado no estado atual
         // ...código existente para montar o corpo da requisição...
 
+        $checkoutData = $this->prepareCheckoutData(); // Define $checkoutData before try block
+
+        // Create a deep copy for logging and mask sensitive data
+        $loggedData = $checkoutData;
+        if (isset($loggedData['card']['number'])) {
+            $loggedData['card']['number'] = '**** **** **** ' . substr($checkoutData['card']['number'], -4);
+        }
+        if (isset($loggedData['card']['cvv'])) {
+            $loggedData['card']['cvv'] = '***';
+        }
+
         try {
+            Log::channel('payment_checkout')->info('Preparing TriboPay Checkout. Data:', $loggedData);
+
             $request = new Request(
                 'POST',
                 'https://api.tribopay.com.br/api/public/v1/transactions?api_token=lqyOgcoAfhxZkJ2bM606vGhmTur4I02USzs8l6N0JoH0ToN1zv31tZVDnTZU',
                 $headers,
-                json_encode($this->prepareCheckoutData())
+                json_encode($checkoutData) // Use the variable that was logged
             );
 
             $res = $client->sendAsync($request)->wait();
+            $responseBody = $res->getBody()->getContents(); // Read body once
+
+            // Debugging point
+
+            $dataResponse = json_decode($responseBody, true);
+
 
             // Log da resposta da API
-            \Illuminate\Support\Facades\Log::info('TriboPay API Response', [
-                'response' => $res->getBody()->getContents(),
+            Log::channel('payment_checkout')->info('TriboPay API Response:', [
+                'status' => $res->getStatusCode(),
+                'body' => $responseBody,
                 'timestamp' => now()
             ]);
+            $domain = urlencode(env('APP_URL'));
 
-            return redirect('http://web.snaphubb.online/ups-1');
+            return redirect("http://web.snaphubb.online/ups-1/?fpay={$dataResponse['transaction']}&domain={$domain}");
         } catch (\Exception $e) {
+            Log::channel('payment_checkout')->error('TriboPay API Error:', [
+                'message' => $e->getMessage(),
+                'request_data' => $loggedData, // Log masked data
+                // 'trace' => $e->getTraceAsString(), // Optional: trace can be very verbose
+            ]);
             // Lidar com erros de API
             $this->addError('payment', 'Ocorreu um erro ao processar o pagamento: ' . $e->getMessage());
         }
@@ -357,15 +408,28 @@ class PagePay extends Component
 
     private function prepareCheckoutData()
     {
+        // Convert formatted string "1.234,50" or "69,90" to float 1234.50 or 69.90
+        $numeric_final_price = floatval(str_replace(',', '.', str_replace('.', '', $this->totals['final_price'])));
+
+        $expMonth = null;
+        $expYear = null;
+        if ($this->cardExpiry) {
+            $parts = explode('/', $this->cardExpiry);
+            $expMonth = $parts[0] ?? null;
+            if (!empty($parts[1])) {
+                $expYear = (strlen($parts[1]) == 2) ? '20' . $parts[1] : $parts[1];
+            }
+        }
+
         return [
-            'amount' => $this->totals['final_price'] * 100,
+            'amount' => $numeric_final_price * 100,
             'offer_hash' => $this->plans[$this->selectedPlan]['hash'],
             'payment_method' => 'credit_card',
             'card' => [
                 'number' => $this->cardNumber,
                 'holder_name' => $this->cardName,
-                'exp_month' => $this->cardExpiry,
-                'exp_year' => date('Y'),
+                'exp_month' => $expMonth, // Use parsed month
+                'exp_year' => $expYear,   // Use parsed year
                 'cvv' => $this->cardCvv,
             ],
             'customer' => [
@@ -399,7 +463,7 @@ class PagePay extends Component
         }
     }
 
-     public function acceptDownsell()
+    public function acceptDownsell()
     {
         $this->selectedPlan = 'quarterly';
         $this->calculateTotals();
@@ -453,6 +517,9 @@ class PagePay extends Component
 
     public function render()
     {
-        return view('livewire.page-pay');
+        return view('livewire.page-pay')->layoutData([
+            'title' => __('payment.title'),
+            'canonical' => url()->current(),
+        ]);
     }
 }

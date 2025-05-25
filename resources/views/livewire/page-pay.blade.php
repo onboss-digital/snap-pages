@@ -39,16 +39,6 @@
         .sticky-summary.show {
             transform: translateY(0);
         }
-
-        .hidden-form {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease-in-out;
-        }
-
-        .show-form {
-            max-height: 500px;
-        }
     </style>
 @endsection
 
@@ -165,20 +155,6 @@
                         <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.payment_method') }}</h2>
 
                         <div class="grid grid-cols-1 gap-3">
-                            {{-- <div class="relative">
-                                <input type="radio" id="payment-pix" name="payment_method" value="pix"
-                                    class="peer sr-only" />
-                                <label for="payment-pix"
-                                    class="flex flex-col items-center justify-center p-4 rounded-lg border border-gray-700 bg-[#2D2D2D] cursor-pointer transition-all hover:bg-gray-800 peer-checked:border-[#E50914] peer-checked:bg-[#2D2D2D] h-24">
-                                    <svg class="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                                    </svg>
-                                    <span class="text-sm font-medium text-white">{{ __('payment.pix') }}</span>
-                                </label>
-                            </div> --}}
-
                             <div class="relative">
                                 <input type="radio" id="payment-card" name="payment_method" value="credit_card"
                                     class="peer sr-only" checked />
@@ -202,8 +178,10 @@
                                     <label
                                         class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.card_number') }}</label>
                                     <input name="card_number" type="text" id="card-number"
-                                        wire:model="cardNumber" placeholder="0000 0000 0000 0000"
+                                        x-mask="9999 9999 9999 9999" placeholder="0000 0000 0000 0000"
+                                        wire:model.defer="cardNumber"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                    @error('cardNumber') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-4">
@@ -211,15 +189,17 @@
                                         <label
                                             class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.expiry_date') }}</label>
                                         <input name="card_expiry" type="text" id="card-expiry"
-                                            placeholder="MM/AA" wire:model="cardExpiry"
+                                            x-mask="99/99" placeholder="MM/YY" wire:model.defer="cardExpiry"
                                             class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                        @error('cardExpiry') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                     </div>
                                     <div>
                                         <label
                                             class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.security_code') }}</label>
                                         <input name="card_cvv" type="text" id="card-cvv" placeholder="CVV"
-                                            wire:model="cardCvv"
+                                            x-mask="9999" wire:model.defer="cardCvv"
                                             class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                        @error('cardCvv') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
 
@@ -229,6 +209,7 @@
                                     <input name="card_name" type="text"
                                         placeholder="{{ __('payment.card_name') }}" wire:model="cardName"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                    @error('cardName') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
                                     <label
@@ -236,13 +217,15 @@
                                     <input name="email" type="text" placeholder="{{ __('payment.email') }}"
                                         wire:model="email"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                    @error('email') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
                                     <label
                                         class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.phone') }}</label>
-                                    <input name="phone" type="text" placeholder="{{ __('payment.phone') }}"
-                                        wire:model="phone"
+                                    <input name="phone" type="text" id="phone" placeholder="(00) 00000-0000"
+                                        x-mask="(99) 99999-9999" wire:model.defer="phone"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                    @error('phone') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                 </div>
                             </div>
                         </div>
@@ -419,12 +402,6 @@
 
                         <!-- Price breakdown -->
                         <div class="border-y border-gray-700 py-5 my-4 space-y-2">
-                            @foreach ($listProducts as $product)
-                                <div class="flex justify-between text-gray-300">
-                                    <span>{{ $product['name'] }}</span>
-                                    <span id="plan-price">{{ $product['formatted_price'] }}</span>
-                                </div>
-                            @endforeach
                             <!-- Coupon area -->
                             <div>
                                 <div class="flex space-x-2">
