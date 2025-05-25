@@ -517,6 +517,9 @@ class PagePay extends Component
 
     public function render()
     {
-        return view('livewire.page-pay');
+        return view('livewire.page-pay')->layoutData([
+            'title' => __('payment.title'),
+            'canonical' => url()->current(),
+        ]);
     }
 }
