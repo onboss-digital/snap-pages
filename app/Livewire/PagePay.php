@@ -2,14 +2,11 @@
 
 namespace App\Livewire;
 
-use App\Models\Order;
-use App\Models\User;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log; // Keep Log as it's used with full namespace
 
 class PagePay extends Component
 {
@@ -75,13 +72,6 @@ class PagePay extends Component
     public $countdownMinutes = 14;
     public $countdownSeconds = 22;
 
-    // Cupom
-    public $couponCode = '';
-    public $couponApplied = false;
-    public $couponDiscount = 0;
-    public $couponMessage = '';
-    public $couponMessageType = '';
-
     // Elementos de urgência
     public $spotsLeft = 12;
     public $activityCount = 0;
@@ -90,7 +80,7 @@ class PagePay extends Component
 
     // Valores calculados
     public $totals = [];
-    public $listProducts = [];
+    // public $listProducts = []; // Removed as it's unused and never populated
 
     // Dados de benefícios
     public $benefits = [
@@ -119,6 +109,18 @@ class PagePay extends Component
             'description' => 'Ajude a moldar o futuro da plataforma'
         ]
     ];
+
+    protected function rules()
+    {
+        return [
+            'cardName' => 'required|string|max:255',
+            'cardNumber' => 'required|numeric|digits_between:13,19',
+            'cardExpiry' => ['required', 'string', 'regex:/^(0[1-9]|1[0-2])\/?([0-9]{2})$/'],
+            'cardCvv' => 'required|numeric|digits_between:3,4',
+            'email' => 'required|email',
+            'phone' => ['required', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
+        ];
+    }
 
     public function mount()
     {
@@ -258,10 +260,21 @@ class PagePay extends Component
 
     public function startCheckout()
     {
+        // Clean inputs before validation
+        if ($this->cardNumber) {
+            $this->cardNumber = preg_replace('/\D/', '', $this->cardNumber);
+        }
+        if ($this->cardCvv) {
+            $this->cardCvv = preg_replace('/\D/', '', $this->cardCvv);
+        }
+        if ($this->phone) {
+            $this->phone = preg_replace('/[^0-9+]/', '', $this->phone); // Keep + for international
+        }
+        // $this->cardExpiry is usually fine as MM/YY for regex (e.g., "12/25")
+
+        $this->validate(); // Perform validation
+
         $this->showSecure = true;
-
-        // Código comentado de validação e criação de usuário/pedido removido
-
         $this->showLodingModal = true;
 
 
@@ -342,7 +355,7 @@ class PagePay extends Component
             $res = $client->sendAsync($request)->wait();
 
             // Log da resposta da API
-            \Illuminate\Support\Facades\Log::info('TriboPay API Response', [
+            Log::info('TriboPay API Response', [ // Use imported Log
                 'response' => $res->getBody()->getContents(),
                 'timestamp' => now()
             ]);
@@ -357,8 +370,11 @@ class PagePay extends Component
 
     private function prepareCheckoutData()
     {
+        // Convert formatted string "1.234,50" or "69,90" to float 1234.50 or 69.90
+        $numeric_final_price = floatval(str_replace(',', '.', str_replace('.', '', $this->totals['final_price'])));
+
         return [
-            'amount' => $this->totals['final_price'] * 100,
+            'amount' => $numeric_final_price * 100,
             'offer_hash' => $this->plans[$this->selectedPlan]['hash'],
             'payment_method' => 'credit_card',
             'card' => [
