@@ -38,6 +38,7 @@ return [
     'card_name' => 'Name on card',
     'email' => 'Email',
     'phone' => 'Phone number',
+    'cpf' => 'CPF (required for payments in Brazil)',
 
     // Order Bump
     'exclusive_access' => 'Exclusive access to weekly live sessions',

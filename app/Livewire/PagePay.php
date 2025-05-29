@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log; // Keep Log as it's used with full namespace
 class PagePay extends Component
 {
 
-    public $cardName, $cardNumber, $cardExpiry, $cardCvv, $email, $phone,
+    public $cardName, $cardNumber, $cardExpiry, $cardCvv, $email, $phone, $cpf,
         $plans, $modalData, $product;
 
 
@@ -114,7 +114,7 @@ class PagePay extends Component
 
     protected function rules()
     {
-        return [
+        $rules = [
             'cardName' => 'required|string|max:255',
             'cardNumber' => 'required|numeric|digits_between:13,19',
             'cardExpiry' => ['required', 'string', 'regex:/^(0[1-9]|1[0-2])\/?([0-9]{2})$/'],
@@ -122,6 +122,13 @@ class PagePay extends Component
             'email' => 'required|email',
             'phone' => ['required', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
         ];
+
+        // CPF is required only when currency is BRL (Brazilian Real)
+        if ($this->selectedCurrency === 'BRL') {
+            $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
+        }
+
+        return $rules;
     }
 
     public function mount()
@@ -148,9 +155,9 @@ class PagePay extends Component
         $this->activityCount = rand(1, 50);
 
         $this->product = [
-            'hash' => 'xwe2w2p4ce',
-            'title' => 'Snaphubb',
-            'cover' => 'https://d2lr0gp42cdhn1.cloudfront.net/3564404929/products/vyvnybkpwbuvkmt4m2pphh6is',
+            'hash' => '8v1zcpkn9j',
+            'title' => 'SNAPHUBB BR',
+            'cover' => 'https://d2lr0gp42cdhn1.cloudfront.net/3564404929/products/ua11qf25qootxsznxicnfdbrd',
             'product_type' => 'digital',
             'guaranted_days' => 7,
             'sale_page' => 'https://snaphubb.online',
@@ -162,7 +169,7 @@ class PagePay extends Component
     {
         return [
             'monthly' => [
-                'hash' => 'penev',
+                'hash' => 'rwquocfj5c',
                 'label' => __('payment.monthly'),
                 'nunber_months' => 1,
                 'prices' => [
@@ -279,6 +286,15 @@ class PagePay extends Component
         }
         if ($this->phone) {
             $this->phone = preg_replace('/[^0-9+]/', '', $this->phone); // Keep + for international
+        }
+        // Format CPF if provided (for BRL currency)
+        if ($this->cpf && $this->selectedCurrency === 'BRL') {
+            // First remove all non-numeric characters
+            $cpf = preg_replace('/\D/', '', $this->cpf);
+            // Then format if it has 11 digits
+            if (strlen($cpf) == 11) {
+                $this->cpf = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
+            }
         }
         // $this->cardExpiry is usually fine as MM/YY for regex (e.g., "12/25")
 
@@ -436,6 +452,7 @@ class PagePay extends Component
                 'name' => $this->cardName,
                 'email' => $this->email,
                 'phone_number' => $this->phone,
+                'cpf' => $this->selectedCurrency === 'BRL' ? preg_replace('/[^0-9]/', '', $this->cpf) : null,
             ],
             'cart' => [
                 [

@@ -38,6 +38,7 @@ return [
     'card_name' => 'Nombre en la tarjeta',
     'email' => 'Correo electrónico',
     'phone' => 'Teléfono',
+    'cpf' => 'CPF (obligatorio para pagos en Brasil)',
 
     // Order Bump
     'exclusive_access' => 'Acceso exclusivo a transmisiones en vivo semanales',

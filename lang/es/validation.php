@@ -29,5 +29,6 @@ return [
         'cardCvv' => 'código de seguridad (CVV)',
         'email' => 'correo electrónico',
         'phone' => 'teléfono',
+        'cpf' => 'CPF',
     ],
 ];

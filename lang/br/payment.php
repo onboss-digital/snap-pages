@@ -38,6 +38,7 @@ return [
     'card_name' => 'Nome no cartão',
     'email' => 'E-mail',
     'phone' => 'Telefone',
+    'cpf' => 'CPF (obrigatório para pagamentos no Brasil)',
 
     // Order Bump
     'exclusive_access' => 'Acesso exclusivo a lives semanais',
