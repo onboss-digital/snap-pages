@@ -382,8 +382,9 @@ class PagePay extends Component
         if (isset($loggedData['card']['cvv'])) {
             $loggedData['card']['cvv'] = '***';
         }
-
+        // Debuggin g point to inspect $checkoutData
         try {
+
             Log::channel('payment_checkout')->info('Preparing TriboPay Checkout. Data:', $loggedData);
 
             $request = new Request(
@@ -395,9 +396,7 @@ class PagePay extends Component
 
             $res = $client->sendAsync($request)->wait();
             $responseBody = $res->getBody()->getContents(); // Read body once
-
             // Debugging point
-
             $dataResponse = json_decode($responseBody, true);
 
 
@@ -409,7 +408,7 @@ class PagePay extends Component
             ]);
             $domain = urlencode(env('APP_URL'));
 
-            return redirect("http://web.snaphubb.online/ups-1/?fpay={$dataResponse['transaction']}&domain={$domain}");
+            return redirect("https://web.snaphubb.online/obg/");
         } catch (\Exception $e) {
             Log::channel('payment_checkout')->error('TriboPay API Error:', [
                 'message' => $e->getMessage(),
@@ -438,7 +437,7 @@ class PagePay extends Component
         }
 
         return [
-            'amount' => $numeric_final_price * 100,
+            'amount' => (int)($numeric_final_price * 100), // Convert to cents
             'offer_hash' => $this->plans[$this->selectedPlan]['hash'],
             'payment_method' => 'credit_card',
             'card' => [
@@ -447,20 +446,21 @@ class PagePay extends Component
                 'exp_month' => $expMonth, // Use parsed month
                 'exp_year' => $expYear,   // Use parsed year
                 'cvv' => $this->cardCvv,
+                'cpf' => $this->selectedCurrency === 'BRL' ? preg_replace('/[^0-9]/', '', $this->cpf) : null,
             ],
             'customer' => [
                 'name' => $this->cardName,
                 'email' => $this->email,
                 'phone_number' => $this->phone,
-                'cpf' => $this->selectedCurrency === 'BRL' ? preg_replace('/[^0-9]/', '', $this->cpf) : null,
+                'document' => $this->selectedCurrency === 'BRL' ? preg_replace('/[^0-9]/', '', $this->cpf) : null,
             ],
             'cart' => [
                 [
                     'product_hash' => $this->product['hash'],
                     'title' => $this->product['title'],
-                    'price' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['descont_price'] * 100,
+                    'price' => (int)($this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['descont_price'] * 100),
                     'quantity' => 1,
-                    'operation_type' => 1
+                    'operation_type' => 1,
                 ]
             ],
             'installments' => 1,
