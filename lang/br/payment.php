@@ -52,10 +52,10 @@ return [
     // Testimonials
     'subscribers_say' => 'O que dizem nossos assinantes',
     'days_ago' => 'há 3 dias',
-    'testimonial_1' => 'Assinante há 6 meses e não me arrependo! O conteúdo é incrível e sempre atualizado. As lives exclusivas são o melhor benefício, aprendo muito com os especialistas.',
-    'testimonial_2' => 'Vale cada centavo! Assinei o plano anual e economizei muito. A possibilidade de acessar todo o conteúdo offline é perfeita para quando estou viajando.',
+    'testimonial_1' => 'Assinante há 6 meses e não me arrependo! O conteúdo é incrível e sempre atualizado. A votação para nova modelo é muito boa, sempre novas modelos.',
+    'testimonial_2' => 'Vale cada centavo! Assinei e economizei muito. A possibilidade de acessar todo o conteúdo offline é perfeita para quando estou viajando.',
     'subscriber_1' => 'Carlos M. - São Paulo',
-    'subscriber_2' => 'Ana P. - Rio de Janeiro',
+    'subscriber_2' => 'João P. - Rio de Janeiro',
 
     // Order Summary
     'order_summary' => 'Resumo do pedido',
