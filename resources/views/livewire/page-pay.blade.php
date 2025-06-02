@@ -580,7 +580,6 @@
             <div id="sticky-summary" class="sticky-summary bg-[#1F1F1F] border-t border-gray-700 md:hidden p-4">
                 <div class="container mx-auto flex flex-col items-center justify-center gap-2">
                     <div class="flex flex-col items-center w-full">
-                        <div class="text-xs text-gray-300 mb-1 text-center">{{ __('payment.monthly') }}</div>
                         <div class="text-2xl font-bold text-[#E50914] mb-1 text-center" id="sticky-price">
                             {{ $currencies[$selectedCurrency]['symbol'] }}
                                     {{ $totals['final_price'] ?? '00' }}
