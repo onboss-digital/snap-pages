@@ -64,10 +64,10 @@ class PagePay extends Component
 
     public $bump = [
         'id' => 4,
-        'title' => 'Acesso Exclusivo',
+        'title' => 'Criptografía anónima',
         'description' => 'Acesso a conteúdos ao vivo e eventos',
         'price' => 9.99,
-        'hash' => 'xwe2w2p4ce_lxcb1z6opc',
+        'hash' => '3nidg2uzc0',
     ];
 
     // Contador regressivo
@@ -174,8 +174,8 @@ class PagePay extends Component
                 'nunber_months' => 1,
                 'prices' => [
                     'BRL' => [
-                        'origin_price' => 94.90,
-                        'descont_price' => 5.90,
+                        'origin_price' => 39.90,
+                        'descont_price' => 29.90,
                         'currency' => 'BRL',
                     ],
                     'USD' => [
@@ -201,8 +201,8 @@ class PagePay extends Component
                 'nunber_months' => 3,
                 'prices' => [
                     'BRL' => [
-                        'origin_price' => 242.00,
-                        'descont_price' => 6.90,
+                        'origin_price' => 189.70,
+                        'descont_price' => 69.90,
                         'currency' => 'BRL',
                     ],
                     'USD' => [
@@ -222,14 +222,14 @@ class PagePay extends Component
                     ],
                 ],
             ],
-            'annual' => [
+            'semi-annual' => [
                 'hash' => 'cupxl',
-                'label' => __('payment.annual'),
-                'nunber_months' => 12,
+                'label' => __(key: 'payment.semi-annual'),
+                'nunber_months' => 6,
                 'prices' => [
                     'BRL' => [
-                        'origin_price' => 783.49,
-                        'descont_price' => 7.90,
+                        'origin_price' => 309.60,
+                        'descont_price' => 89.90,
                         'currency' => 'BRL',
                     ],
                     'USD' => [
@@ -309,14 +309,14 @@ class PagePay extends Component
             case 'quarterly':
                 $this->showUpsellModal = true;
 
-                $offerValue = round($this->plans['annual']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['annual']['nunber_months'], 1);
-                $offerDiscont = $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price'] * $this->plans['annual']['nunber_months'] -  $offerValue * $this->plans['annual']['nunber_months'];
+                $offerValue = round($this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['semi-annual']['nunber_months'], 1);
+                $offerDiscont = $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price'] * $this->plans['semi-annual']['nunber_months'] -  $offerValue * $this->plans['semi-annual']['nunber_months'];
 
                 $this->modalData = [
                     'actual_month_value' => $this->totals['month_price_discount'],
                     'offer_month_value' => number_format($offerValue, 2, ',', '.'),
                     'offer_total_discount' => number_format($offerDiscont, 2, ',', '.'),
-                    'offer_total_value' => number_format($this->plans['annual']['prices'][$this->selectedCurrency]['descont_price'], 2, ',', '.'),
+                    'offer_total_value' => number_format($this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price'], 2, ',', '.'),
                 ];
 
                 break;
@@ -423,7 +423,6 @@ class PagePay extends Component
 
     private function prepareCheckoutData()
     {
-        // Convert formatted string "1.234,50" or "69,90" to float 1234.50 or 69.90
         $numeric_final_price = floatval(str_replace(',', '.', str_replace('.', '', $this->totals['final_price'])));
 
         $expMonth = null;

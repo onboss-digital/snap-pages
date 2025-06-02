@@ -41,11 +41,13 @@ return [
     'cpf' => 'CPF (obrigatório para pagamentos no Brasil)',
 
     // Order Bump
-    'exclusive_access' => 'Acesso exclusivo a lives semanais',
-    'participate_live' => 'Participe de lives exclusivas com especialistas e convidados especiais toda semana.',
+    'exclusive_access' => 'Criptografía anónima',
+    'participate_live' => 'Limpe seus rastros e proteja sua identidade de olhares indiscretos ou intrusos online.',
     'per_month' => '/mês',
     'bonus_unlocked' => 'Bônus desbloqueado: lives semanais',
     'access_exclusive' => 'Você agora tem acesso ao conteúdo exclusivo!',
+
+
 
     // Testimonials
     'subscribers_say' => 'O que dizem nossos assinantes',
@@ -60,7 +62,8 @@ return [
     'offer_expires' => 'Oferta expira em',
     'select_plan' => 'Selecione seu plano',
     'monthly' => 'Mensal',
-    'quarterly' => 'Trimestral (10% off)',
+    'quarterly' => 'Trimestral (60% off)',
+    'semi-annual' => 'Semestral (75% off)',
     'annual' => 'Anual (25% off)',
     'flexible_plan' => 'Plano flexível — cancele a qualquer momento',
     'premium_subscription' => 'Assinatura Premium',
@@ -94,6 +97,7 @@ return [
     // Upsell
     'save_more' => 'Economize mais!',
     'annual_free_months' => 'Assine o plano anual e ganhe 2 meses grátis!',
+    'semi_annual_free_months' => 'Assine o plano semestral e ganhe ainda mais desconto!',
     'current' => '(atual)',
     'offer' => '(oferta)',
     'savings' => 'Economia de',
@@ -103,7 +107,7 @@ return [
 
     // Downsell
     'special_offer' => 'Oferta especial',
-    'try_quarterly' => 'Experimente o trimestral com 15% de desconto!',
+    'try_quarterly' => 'Experimente o trimestral com 60% de desconto!',
     'no_thanks' => 'Não, obrigado',
     'want_offer' => 'Quero esta oferta',
 

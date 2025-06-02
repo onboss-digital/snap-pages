@@ -88,7 +88,7 @@
 
             <div class="mt-6 w-full h-32 md:h-48 rounded-xl overflow-hidden relative bg-gray-900">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent">
-                    <img class="img logo" src="{{ asset('imgs/banner.jpeg') }}" alt="streamit">
+                    <img class="img logo" src="{{ asset('imgs/banner brasil.jpg') }}" alt="streamit">
 
                 </div>
             </div>
@@ -102,7 +102,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="md:col-span-2">
                     <!-- Currency Selector -->
-                    <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
+                    {{-- <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
                         <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.select_currency') }}</h2>
 
                         <div class="relative">
@@ -124,7 +124,7 @@
                                 </svg>
                             </div>
                         </div>
-                    </div>
+                    </div> --}}
 
                     <!-- Benefits -->
                     <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
@@ -181,17 +181,21 @@
                                         x-mask="9999 9999 9999 9999" placeholder="0000 0000 0000 0000"
                                         wire:model.defer="cardNumber"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
-                                    @error('cardNumber') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                    @error('cardNumber')
+                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label
                                             class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.expiry_date') }}</label>
-                                        <input name="card_expiry" type="text" id="card-expiry"
-                                            x-mask="99/99" placeholder="MM/YY" wire:model.defer="cardExpiry"
+                                        <input name="card_expiry" type="text" id="card-expiry" x-mask="99/99"
+                                            placeholder="MM/YY" wire:model.defer="cardExpiry"
                                             class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
-                                        @error('cardExpiry') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                        @error('cardExpiry')
+                                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                        @enderror
                                     </div>
                                     <div>
                                         <label
@@ -199,7 +203,9 @@
                                         <input name="card_cvv" type="text" id="card-cvv" placeholder="CVV"
                                             x-mask="9999" wire:model.defer="cardCvv"
                                             class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
-                                        @error('cardCvv') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                        @error('cardCvv')
+                                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                        @enderror
                                     </div>
                                 </div>
 
@@ -209,7 +215,9 @@
                                     <input name="card_name" type="text"
                                         placeholder="{{ __('payment.card_name') }}" wire:model="cardName"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
-                                    @error('cardName') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                    @error('cardName')
+                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
                                 </div>
                                 <div>
                                     <label
@@ -217,15 +225,20 @@
                                     <input name="email" type="text" placeholder="{{ __('payment.email') }}"
                                         wire:model="email"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
-                                    @error('email') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                    @error('email')
+                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
                                 </div>
                                 <div>
                                     <label
                                         class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.phone') }}</label>
-                                    <input name="phone" type="text" id="phone" placeholder="(00) 00000-0000"
-                                        x-mask="(99) 99999-9999" wire:model.defer="phone"
+                                    <input name="phone" type="text" id="phone"
+                                        placeholder="(00) 00000-0000" x-mask="(99) 99999-9999"
+                                        wire:model.defer="phone"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
-                                    @error('phone') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                    @error('phone')
+                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
                                 </div>
 
                                 <!-- CPF Field - Only visible for Brazilian currency -->
@@ -235,7 +248,9 @@
                                     <input name="cpf" type="text" id="cpf" placeholder="000.000.000-00"
                                         x-mask="999.999.999-99" wire:model.defer="cpf"
                                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
-                                    @error('cpf') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                    @error('cpf')
+                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
                                 </div>
                             </div>
                         </div>
@@ -259,7 +274,8 @@
                                 </div>
                                 <p class="text-gray-400 text-sm mt-1">{{ __('payment.participate_live') }}</p>
                                 <p class="text-[#E50914] font-medium mt-2">+<span
-                                        id="bump-price">R$9,99</span>{{ __('payment.per_month') }}
+                                        id="bump-price">{{ $currencies[$selectedCurrency]['symbol'] }}
+                                        {{ $bump['price'] ?? '00' }}</span>{{ __('payment.per_month') }}
                                 </p>
                             </label>
                         </div>
@@ -435,7 +451,9 @@
                             </div>
                             <div class="flex justify-between text-sm font-bold mt-2 pt-2 border-t border-gray-700">
                                 <span>{{ __('payment.total_to_pay') }}</span>
-                                <span id="final-price">{{ $totals['final_price'] ?? '00' }}</span>
+                                <span id="final-price">
+                                    {{ $currencies[$selectedCurrency]['symbol'] }}
+                                    {{ $totals['final_price'] ?? '00' }}</span>
                                 <input type="hidden" id="input-final-price" name="final-price" value="" />
                             </div>
                         </div>
@@ -550,7 +568,7 @@
                         </svg>
                     </div>
                     <h3 class="text-2xl font-bold text-white">{{ __('payment.save_more') }}</h3>
-                    <p class="text-gray-300 mt-2">{{ __('payment.annual_free_months') }}</p>
+                    <p class="text-gray-300 mt-2">{{ __('payment.semi_annual_free_months') }}</p>
                 </div>
 
                 <div class="bg-[#2D2D2D] rounded-lg p-4 mb-4">
@@ -562,8 +580,8 @@
                         </span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-white font-medium">{{ __('payment.annual') }}
-                            {{ __('payment.offer') }}
+                        <span class="text-white font-medium">
+                            {{ __('payment.semi-annual') }}
                         </span>
                         <span class="text-[#E50914] font-bold" id="upsell-annual">
                             {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
@@ -575,7 +593,7 @@
                         {{ __('payment.savings') }}
                         {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
                         {{ $modalData['offer_total_discount'] ?? 00 }}
-                        {{ __('payment.annual') }}
+                        {{ __('payment.semi-annual') }}
                     </div>
                     <div class="mt-2 text-sm text-right" id="upsell-savings">
                         {{ __('payment.total_to_pay') }}
@@ -632,7 +650,6 @@
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-white font-medium">{{ __('payment.quarterly') }}
-                            {{ __('payment.offer') }}
                         </span>
                         <span class="text-[#E50914] font-bold" id="downsell-quarterly">
                             {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
