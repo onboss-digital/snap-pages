@@ -32,12 +32,8 @@
             left: 0;
             right: 0;
             z-index: 50;
-            transform: translateY(100%);
-            transition: transform 0.3s ease-in-out;
-        }
-
-        .sticky-summary.show {
-            transform: translateY(0);
+            transform: translateY(0); /* Always visible on mobile */
+            transition: none;
         }
     </style>
     <script type="text/javascript">
@@ -102,7 +98,7 @@
 
 
 <div>
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
+    <div class="container mx-auto px-4 py-8 max-w-4xl pb-24 md:pb-8">
 
         <!-- Header -->
         <header class="mb-8">
@@ -538,7 +534,7 @@
                         </div>
 
                         <button id="checkout-button" type="button" wire:click.prevent="startCheckout"
-                            class="w-full bg-[#E50914] hover:bg-[#B8070F] text-white py-3 text-lg font-bold rounded-xl transition-all">
+                            class="w-full bg-[#E50914] hover:bg-[#B8070F] text-white py-3 text-lg font-bold rounded-xl transition-all hidden md:block">
                             {{ __('payment.start_premium') }}
                         </button>
 
@@ -583,17 +579,18 @@
 
             <!-- Sticky Summary -->
             <div id="sticky-summary" class="sticky-summary bg-[#1F1F1F] border-t border-gray-700 md:hidden p-4">
-                <div class="container mx-auto">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-white font-medium" id="sticky-plan">{{ __('payment.monthly') }}</div>
-                            <div class="text-[#E50914]" id="sticky-price">R$58,99/{{ __('payment.per_month') }}</div>
+                <div class="container mx-auto flex flex-col items-center justify-center gap-2">
+                    <div class="flex flex-col items-center w-full">
+                        <div class="text-xs text-gray-300 mb-1 text-center">{{ __('payment.monthly') }}</div>
+                        <div class="text-2xl font-bold text-[#E50914] mb-1 text-center" id="sticky-price">
+                            {{ $currencies[$selectedCurrency]['symbol'] }}
+                                    {{ $totals['final_price'] ?? '00' }}
                         </div>
-                        <button type="button" id="sticky-checkout-button"
-                            class="bg-[#E50914] hover:bg-[#B8070F] text-white py-2 px-4 text-sm font-bold rounded-lg transition-all">
-                            {{ __('payment.start_premium') }}
-                        </button>
                     </div>
+                    <button type="button" id="sticky-checkout-button"
+                        class="bg-[#E50914] hover:bg-[#B8070F] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center">
+                        <span class="truncate">{{ __('payment.start_premium') }}</span>
+                    </button>
                 </div>
             </div>
 
