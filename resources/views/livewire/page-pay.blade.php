@@ -326,8 +326,7 @@
                                 <p class="text-gray-400 text-sm mt-1">{{ __('payment.participate_live') }}</p>
                                 <p class="text-[#E50914] font-medium mt-2">+<span
                                         id="bump-price">{{ $currencies[$selectedCurrency]['symbol'] }}
-                                        {{ $bump['price'] ?? '00' }}</span>{{ __('payment.per_month') }}
-                                </p>
+                                        {{ $bump['price'] ?? '00' }}</span>
                             </label>
                         </div>
                     </div>
