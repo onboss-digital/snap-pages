@@ -44,8 +44,8 @@ return [
     'exclusive_access' => 'Criptografía anónima',
     'participate_live' => 'Limpe seus rastros e proteja sua identidade de olhares indiscretos ou intrusos online.',
     'per_month' => '/mês',
-    'bonus_unlocked' => 'Bônus desbloqueado: lives semanais',
-    'access_exclusive' => 'Você agora tem acesso ao conteúdo exclusivo!',
+    'bonus_unlocked' => 'Bônus desbloqueado: Criptografía anónima',
+    'access_exclusive' => 'Você agora tem acesso ao conteúdo exclusivo Anonimamente!',
 
 
 

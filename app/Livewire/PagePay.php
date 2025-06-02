@@ -257,9 +257,6 @@ class PagePay extends Component
         $plan = $this->plans[$this->selectedPlan];
         $prices = $plan['prices'][$this->selectedCurrency];
 
-        //
-
-
         $this->totals = [
             'month_price' => $prices['origin_price'] / $plan['nunber_months'],
             'month_price_discount' => $prices['descont_price'] / $plan['nunber_months'],
@@ -267,8 +264,12 @@ class PagePay extends Component
             'total_discount' => $prices['origin_price'] - $prices['descont_price'],
         ];
 
-
-        $this->totals['final_price'] = $prices['descont_price'];
+        // Add bump price if bumpActive is true
+        $finalPrice = $prices['descont_price'];
+        if ($this->bumpActive && isset($this->bump['price'])) {
+            $finalPrice += $this->bump['price'];
+        }
+        $this->totals['final_price'] = $finalPrice;
 
         $this->totals = array_map(function ($value) {
             return number_format(round($value, 1), 2, ',', '.');
@@ -350,7 +351,7 @@ class PagePay extends Component
 
     public function acceptUpsell()
     {
-        $this->selectedPlan = 'annual';
+        $this->selectedPlan = 'semi-annual';
         $this->calculateTotals();
         $this->showUpsellModal = false;
         $this->sendCheckout();
@@ -435,6 +436,25 @@ class PagePay extends Component
             }
         }
 
+        $cart[] = [
+            'product_hash' => $this->product['hash'],
+            'title' => $this->product['title'],
+            'price' => (int)($this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['descont_price'] * 100), // Convert to cents
+            'quantity' => 1,
+            'operation_type' => 1, // Assuming 1 is the correct operation type
+        ];
+
+        if($this->bumpActive) {
+            $cart[] = [
+                'product_hash' => $this->bump['hash'],
+                'title' => $this->bump['title'],
+                'price' => (int)($this->bump['price'] * 100), // Convert to cents
+                'quantity' => 1,
+                'operation_type' => 2, // Assuming 1 is the correct operation type
+            ];
+
+        }
+
         return [
             'amount' => (int)($numeric_final_price * 100), // Convert to cents
             'offer_hash' => $this->plans[$this->selectedPlan]['hash'],
@@ -453,15 +473,7 @@ class PagePay extends Component
                 'phone_number' => $this->phone,
                 'document' => $this->selectedCurrency === 'BRL' ? preg_replace('/[^0-9]/', '', $this->cpf) : null,
             ],
-            'cart' => [
-                [
-                    'product_hash' => $this->product['hash'],
-                    'title' => $this->product['title'],
-                    'price' => (int)($this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['descont_price'] * 100),
-                    'quantity' => 1,
-                    'operation_type' => 1,
-                ]
-            ],
+            'cart' => $cart,
             'installments' => 1,
         ];
     }
