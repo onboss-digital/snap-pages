@@ -135,6 +135,11 @@ class PagePay extends Component
     {
         $this->plans = $this->getPlans();
 
+        // $bal = "{\r\n    \"amount\": 500,\r\n    \"offer_hash\": \"s7b5e\", // hash de uma oferta\r\n    \"payment_method\": \"pix\", // credit_card, billet, pix\r\n    \"card\": {\r\n        \"number\": \"4111 1111 1111 1111\",\r\n        \"holder_name\": \"Teste Holder name\",\r\n        \"exp_month\": 12,\r\n        \"exp_year\": 2025,\r\n        \"cvv\": \"123\"\r\n    },\r\n    \"customer\": {\r\n        \"name\": \"Customer name\",\r\n        \"email\": \"email@email.com\",\r\n        \"phone_number\": \"21975784612\",\r\n        \"document\": \"09115751031\",\r\n        \"street_name\": \"Nome da Rua\",\r\n        \"number\": \"sn\",\r\n        \"complement\": \"Lt19 Qd 134\",\r\n        \"neighborhood\": \"Centro\",\r\n        \"city\": \"Itaguaí\",\r\n        \"state\": \"RJ\",\r\n        \"zip_code\": \"23822180\"\r\n    },\r\n    \"cart\": [\r\n        {\r\n            \"product_hash\": \"so4neitign\",\r\n            \"title\": \"Produto Teste API Publica\",\r\n            \"cover\": null,\r\n            \"price\": 10000,\r\n            \"quantity\": 2,\r\n            \"operation_type\": 1,\r\n            \"tangible\": false\r\n        }\r\n    ],\r\n    \"installments\": 1,\r\n    \"expire_in_days\": 1,\r\n    \"postback_url\": \"\", // URL PARA RECEBER ATUALIZAÇÃO DAS TRANSAÇÕES\r\n    \"tracking\": {\r\n        \"src\": \"\",\r\n        \"utm_source\": \"\",\r\n        \"utm_medium\": \"\",\r\n        \"utm_campaign\": \"\",\r\n        \"utm_term\": \"\",\r\n        \"utm_content\": \"\"\r\n    }\r\n}";
+        // // Remove \n e \r do JSON
+        // $bal = str_replace(["\n", "\r"], '', $bal);
+        // dd($bal);
+
         // Debug
         // $this->cardName = 'John Doe';
         // $this->cardNumber = '4111111111111111';
@@ -372,6 +377,8 @@ class PagePay extends Component
 
         // Construção do corpo da requisição baseado no estado atual
         // ...código existente para montar o corpo da requisição...
+
+
 
         $checkoutData = $this->prepareCheckoutData(); // Define $checkoutData before try block
 

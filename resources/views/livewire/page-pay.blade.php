@@ -32,7 +32,8 @@
             left: 0;
             right: 0;
             z-index: 50;
-            transform: translateY(0); /* Always visible on mobile */
+            transform: translateY(0);
+            /* Always visible on mobile */
             transition: none;
         }
     </style>
@@ -68,16 +69,11 @@
             s.parentNode.insertBefore(t, s)
         }(window, document, 'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-
-        fbq('init', '727154214841420'); // Seu ID do Pixel
-        fbq('track', 'PageView'); // Evento de visualização
-        fbq('track', 'InitiateCheckout'); // Evento de início de compra
+        fbq('init', '611486964514786');
+        fbq('track', 'PageView');
     </script>
-
-    <noscript>
-        <img height="1" width="1" style="display:none"
-            src="https://www.facebook.com/tr?id=727154214841420&ev=PageView&noscript=1" />
-    </noscript>
+    <noscript><img height="1" width="1" style="display:none"
+            src="https://www.facebook.com/tr?id=611486964514786&ev=PageView&noscript=1" /></noscript>
     <!-- End Meta Pixel Code -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-YX71NZN3XK"></script>
     <script>
@@ -582,7 +578,7 @@
                     <div class="flex flex-col items-center w-full">
                         <div class="text-2xl font-bold text-[#E50914] mb-1 text-center" id="sticky-price">
                             {{ $currencies[$selectedCurrency]['symbol'] }}
-                                    {{ $totals['final_price'] ?? '00' }}
+                            {{ $totals['final_price'] ?? '00' }}
                         </div>
                     </div>
                     <button type="button" id="sticky-checkout-button"
