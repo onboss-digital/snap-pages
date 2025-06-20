@@ -2,6 +2,8 @@
 
 return [
 
+    'default_payment_gateway' => env('DEFAULT_PAYMENT_GATEWAY', 'tribopay'), // Default to tribopay
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
@@ -33,6 +35,16 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+    ],
+
+    'tribopay' => [
+        'api_token' => env('TRIBO_PAY_API_TOKEN'),
+        'api_url' => env('TRIBO_PAY_API_URL', 'https://api.tribopay.com.br'), // Default API URL
+    ],
+
+    'for4payment' => [
+        'api_key' => env('FOR4PAYMENT_API_KEY'),
+        'api_url' => env('FOR4PAYMENT_API_URL', 'https://api.for4payment.com'), // Example URL
     ],
 
 ];
