@@ -516,7 +516,8 @@ class PagePay extends Component
     public function getListeners()
     {
         return [
-            'echo:activity,ActivityEvent' => 'updateActivityCount',
+            // Removido Laravel Echo para evitar erros de dependência
+            // 'echo:activity,ActivityEvent' => 'updateActivityCount',
         ];
     }
 

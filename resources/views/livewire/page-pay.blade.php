@@ -4,7 +4,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/ico" href="{{ asset('imgs/mini_logo.png') }}" />
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             font-family: 'Urbanist', sans-serif;
@@ -288,7 +287,8 @@
                                 </div>
 
                                 <!-- CPF Field - Only visible for Brazilian currency -->
-                                <div x-data="{}" x-show="$wire.selectedCurrency === 'BRL'">
+                                @if($selectedCurrency === 'BRL')
+                                <div>
                                     <label
                                         class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.cpf') }}</label>
                                     <input name="cpf" type="text" id="cpf" placeholder="000.000.000-00"
@@ -298,6 +298,7 @@
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -519,8 +520,7 @@
 
                         <!-- Verificação de Ambiente Seguro -->
                         <div id="seguranca"
-                            class="w-full bg-gray-800 p-4 rounded-lg flex items-center gap-3 text-sm text-gray-300 animate-pulse mb-4"
-                            wire:show="showSecure" x-transition.duration.500ms>
+                            class="w-full bg-gray-800 p-4 rounded-lg flex items-center gap-3 text-sm text-gray-300 animate-pulse mb-4 @if (!$showSecure) hidden @endif">
                             <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                                 <path
                                     d="M2.003 5.884L10 2l7.997 3.884v4.632c0 5.522-3.936 10.74-7.997 11.484-4.061-.744-7.997-5.962-7.997-11.484V5.884z" />
@@ -575,12 +575,6 @@
             <!-- Sticky Summary -->
             <div id="sticky-summary" class="sticky-summary bg-[#1F1F1F] border-t border-gray-700 md:hidden p-4">
                 <div class="container mx-auto flex flex-col items-center justify-center gap-2">
-                    <div class="flex flex-col items-center w-full">
-                        <div class="text-2xl font-bold text-[#E50914] mb-1 text-center" id="sticky-price">
-                            {{ $currencies[$selectedCurrency]['symbol'] }}
-                            {{ $totals['final_price'] ?? '00' }}
-                        </div>
-                    </div>
                     <button type="button" id="sticky-checkout-button"
                         class="bg-[#E50914] hover:bg-[#B8070F] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center">
                         <span class="truncate">{{ __('payment.start_premium') }}</span>
@@ -594,8 +588,7 @@
 
 
     <!-- Upsell Modal -->
-    <div id="upsell-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        wire:show="showUpsellModal" x-transition.duration.500ms>
+    <div id="upsell-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if (!$showUpsellModal) hidden @endif">
         <div class="bg-[#1F1F1F] rounded-xl max-w-md w-full mx-4">
             <div class="p-6">
                 <button id="close-upsell" wire:click.prevent="rejectUpsell"
@@ -746,9 +739,7 @@
     </div>
 
     <!-- Personalização Modal -->
-    <div id="personalizacao"
-        class="fixed inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center text-white z-50 "
-        wire:show="showLodingModal" x-transition.duration.500ms>
+    <div class="fixed inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center text-white z-50 @if (!$showLodingModal) hidden @endif">
         <svg class="animate-spin h-10 w-10 text-red-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
             viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"

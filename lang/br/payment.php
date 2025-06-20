@@ -3,7 +3,8 @@
 return [
     // Header
     'title' => 'SNAPHUBB Premium - Checkout',
-    'start_subscription' => 'Iniciar sua assinatura Premium',
+    'start_subscription' => "FALTA POUCO...",
+    'start_subscription2' => "preencha os dados a baixo",
     'unlock_access' => 'Desbloqueie acesso exclusivo a todo nosso conteúdo premium.',
 
     // Currency
@@ -85,7 +86,7 @@ return [
     'checking_secure' => 'Verificando ambiente seguro...',
 
     // Action Buttons
-    'start_premium' => 'INICIAR SUBSCRIÇÃO PREMIUM',
+    'start_premium' => 'OBTER APLICATIVO PREMIUM',
     '7_day_guarantee' => 'Garantia de 7 dias',
     'secure_ssl' => 'SSL Seguro',
     'easy_cancel' => 'Cancelamento fácil',
