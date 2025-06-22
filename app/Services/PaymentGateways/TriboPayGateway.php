@@ -22,13 +22,9 @@ class TriboPayGateway implements PaymentGatewayInterface
 
     public function createCardToken(array $cardData): array
     {
-        // TriboPay might not have a separate tokenization step,
-        // or it's part of processPayment.
-        // If so, this method might just format data or return it as is.
-        // For now, let's assume it's not strictly needed for TriboPay
-        // and the card details are sent directly in processPayment.
         return ['status' => 'success', 'token_data' => $cardData];
     }
+
 
     public function processPayment(array $paymentData): array
     {
@@ -51,7 +47,7 @@ class TriboPayGateway implements PaymentGatewayInterface
 
             $request = new Request(
                 'POST',
-                $this->apiUrl . '/api/public/v1/transactions?api_token=' . $this->apiToken,
+                $this->apiUrl . 'transactions?api_token=' . $this->apiToken,
                 $headers,
                 json_encode($paymentData)
             );

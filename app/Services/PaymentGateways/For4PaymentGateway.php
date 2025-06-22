@@ -59,36 +59,37 @@ class For4PaymentGateway implements PaymentGatewayInterface
         Log::channel('payment_checkout')->info('For4PaymentGateway: Processing payment (placeholder). Data:', $loggedData);
 
         // Simulate an API call
-        // try {
-        //     $request = new Request(
-        //         'POST',
-        //         $this->apiUrl . '/payments', // Example endpoint
-        //         $headers,
-        //         json_encode($paymentData)
-        //     );
-        //
-        //     $res = $this->httpClient->sendAsync($request)->wait();
-        //     $responseBody = $res->getBody()->getContents();
-        //     $dataResponse = json_decode($responseBody, true);
-        //
-        //     Log::channel('payment_checkout')->info('For4PaymentGateway: API Response (placeholder).', [
-        //         'status_code' => $res->getStatusCode(),
-        //         'body' => $dataResponse,
-        //     ]);
-        //
-        //     return $this->handleResponse($dataResponse, $res->getStatusCode());
-        //
-        // } catch (\Exception $e) {
-        //     Log::channel('payment_checkout')->error('For4PaymentGateway: API Error (placeholder).', [
-        //         'message' => $e->getMessage(),
-        //         'request_data' => $loggedData,
-        //     ]);
-        //     return [
-        //         'status' => 'error',
-        //         'message' => 'Error processing payment with For4Payment: ' . $e->getMessage(),
-        //         'error_code' => $e->getCode()
-        //     ];
-        // }
+        try {
+            $request = new Request(
+                'POST',
+                $this->apiUrl . '/payments', // Example endpoint
+                $headers,
+                json_encode($paymentData)
+            );
+
+            $res = $this->httpClient->sendAsync($request)->wait();
+            $responseBody = $res->getBody()->getContents();
+            $dataResponse = json_decode($responseBody, true);
+
+            Log::channel('payment_checkout')->info('For4PaymentGateway: API Response (placeholder).', [
+                'status_code' => $res->getStatusCode(),
+                'body' => $dataResponse,
+            ]);
+
+            return $this->handleResponse($dataResponse, $res->getStatusCode());
+
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            Log::channel('payment_checkout')->error('For4PaymentGateway: API Error (placeholder).', [
+                'message' => $e->getMessage(),
+                'request_data' => $loggedData,
+            ]);
+            return [
+                'status' => 'error',
+                'message' => 'Error processing payment with For4Payment: ' . $e->getMessage(),
+                'error_code' => $e->getCode()
+            ];
+        }
 
         // Simulate a successful payment response for now
         $simulatedResponse = [

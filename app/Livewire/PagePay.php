@@ -4,8 +4,6 @@ namespace App\Livewire;
 
 use App\Factories\PaymentGatewayFactory; // Added
 use App\Interfaces\PaymentGatewayInterface; // Added
-// Removed: use GuzzleHttp\Client;
-// Removed: use GuzzleHttp\Psr7\Request;
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
@@ -79,10 +77,22 @@ class PagePay extends Component
         return $rules;
     }
 
+    public function debug()
+    {
+        $this->cardName = 'João da Silva';
+        $this->cardNumber = '4242424242424242'; // Example Visa card number
+        $this->cardExpiry = '12/25'; // Example expiry date
+        $this->cardCvv = '123'; // Example CVV
+        $this->email = 'test@mail.com';
+        $this->phone = '+5511999999999'; // Example phone number
+        $this->cpf = '123.456.789-09'; // Example CPF, valid format
+    }
+
     public function mount(PaymentGatewayInterface $paymentGateway = null) // Modified to allow injection, or resolve via factory
     {
-        // If a gateway is not injected (e.g. by a service provider), create it using the factory
-        $this->paymentGateway = $paymentGateway ?: PaymentGatewayFactory::create();
+        if (env('APP_DEBUG')) {
+            $this->debug();
+        }
 
         $this->plans = $this->getPlans();
         $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
@@ -250,7 +260,8 @@ class PagePay extends Component
 
         $checkoutData = $this->prepareCheckoutData();
 
-        // Use the injected payment gateway
+        $this->paymentGateway = PaymentGatewayFactory::create();
+
         $response = $this->paymentGateway->processPayment($checkoutData);
 
         $this->showProcessingModal = false; // Hide after processing attempt
@@ -260,15 +271,10 @@ class PagePay extends Component
                 'gateway' => get_class($this->paymentGateway),
                 'response' => $response
             ]);
-            // Assuming a successful payment always redirects to a thank you page
-            // The URL might need to be configurable or based on gateway response
+
             $redirectUrl = $response['redirect_url'] ?? "https://web.snaphubb.online/obg/"; // Default or from response
 
-            // Perform the redirect. Livewire needs a specific way to do this.
-            // If $this->paymentGateway->processPayment already handles redirect, this might not be needed.
-            // For now, let's assume we need to redirect from PagePay.
             return redirect()->to($redirectUrl);
-
         } else {
             Log::channel('payment_checkout')->error('PagePay: Payment failed via gateway.', [
                 'gateway' => get_class($this->paymentGateway),
@@ -284,12 +290,9 @@ class PagePay extends Component
         }
     }
 
+
     private function prepareCheckoutData()
     {
-        // This data structure was originally for TriboPay.
-        // It should be made generic or adapted within each gateway.
-        // For now, we keep it similar, and gateways will need to map it.
-
         $numeric_final_price = floatval(str_replace(',', '.', str_replace('.', '', $this->totals['final_price'])));
 
         $expMonth = null;
@@ -344,23 +347,20 @@ class PagePay extends Component
             'exp_year' => $expYear,
             'cvv' => $this->cardCvv,
         ];
-         if ($this->selectedCurrency === 'BRL' && $this->cpf) {
-            $cardDetails['cpf'] = preg_replace('/\D/', '', $this->cpf); // Include cleaned CPF for card if needed by gateway
+        if ($this->selectedCurrency === 'BRL' && $this->cpf) {
+            $cardDetails['document'] = preg_replace('/\D/', '', $this->cpf); // Include cleaned CPF for card if needed by gateway
         }
 
 
         return [
-            'amount' => (int)round($numeric_final_price * 100), // Total amount in cents
-            'currency_code' => $this->selectedCurrency, // Added currency code
-            'offer_hash' => $currentPlanDetails['hash'], // This is likely gateway-specific
-            'payment_method_type' => 'credit_card', // Could be more dynamic in future
-
+            'amount' => (int)round($numeric_final_price * 100),
+            'currency_code' => $this->selectedCurrency,
+            'offer_hash' => $currentPlanDetails['hash'],
+            'payment_method' => 'credit_card',
             'card' => $cardDetails,
             'customer' => $customerData,
             'cart' => $cartItems,
-
             'installments' => 1, // Default, might need to be dynamic
-            // Add other potentially useful generic data:
             'selected_plan_key' => $this->selectedPlan,
             'language' => $this->selectedLanguage,
             'metadata' => [ // For any other custom data
@@ -369,7 +369,6 @@ class PagePay extends Component
             ]
         ];
     }
-
     public function decrementTimer()
     {
         if ($this->countdownSeconds > 0) {
@@ -391,12 +390,6 @@ class PagePay extends Component
     public function rejectDownsell()
     {
         $this->showDownsellModal = false;
-        // If they reject downsell, they proceed with the original plan they had *before* upsell/downsell sequence.
-        // This needs to ensure the selectedPlan is correctly set to what it was.
-        // For simplicity now, assuming it proceeds with the plan that was active when startCheckout was first called.
-        // If startCheckout was for 'monthly', and they rejected upsell (to semi-annual),
-        // then rejected downsell (to quarterly), they should be paying for 'monthly'.
-        // The current `selectedPlan` would be 'monthly' in this scenario if not changed by acceptDownsell.
         $this->sendCheckout();
     }
 
@@ -419,7 +412,7 @@ class PagePay extends Component
             // Recalculate plans and totals as language might affect labels (though prices should be language-agnostic)
             $this->plans = $this->getPlans(); // Re-fetch plans to update labels
             $this->calculateTotals();
-             // Dispatch an event if JS needs to react to language change for UI elements not covered by Livewire re-render
+            // Dispatch an event if JS needs to react to language change for UI elements not covered by Livewire re-render
             $this->dispatch('languageChanged');
         }
     }
@@ -442,10 +435,6 @@ class PagePay extends Component
 
     public function render()
     {
-        // Ensure plans and totals are up-to-date for rendering, especially if currency/plan changes outside of direct wire:model actions
-        // $this->plans = $this->getPlans(); // May not be needed if mount and changeLanguage cover it
-        // $this->calculateTotals(); // May not be needed if mount and changeLanguage cover it
-
         return view('livewire.page-pay')->layoutData([
             'title' => __('payment.title'),
             'canonical' => url()->current(),

@@ -4,6 +4,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/ico" href="{{ asset('imgs/mini_logo.png') }}" />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body {
             font-family: 'Urbanist', sans-serif;
@@ -146,14 +147,6 @@
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="md:col-span-2">
-
-                    @error('payment')
-                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                            <strong class="font-bold">{{ __('payment.error_title') ?? 'Error!' }}</strong>
-                            <span class="block sm:inline">{{ $message }}</span>
-                        </div>
-                    @enderror
-
                     <!-- Currency Selector -->
                     {{-- <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
                         <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.select_currency') }}</h2>
