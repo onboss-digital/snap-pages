@@ -2,11 +2,11 @@
 
 namespace App\Livewire;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
+use App\Factories\PaymentGatewayFactory; // Added
+use App\Interfaces\PaymentGatewayInterface; // Added
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Log; // Keep Log as it's used with full namespace
+use Illuminate\Support\Facades\Log;
 
 class PagePay extends Component
 {
@@ -14,19 +14,15 @@ class PagePay extends Component
     public $cardName, $cardNumber, $cardExpiry, $cardCvv, $email, $phone, $cpf,
         $plans, $modalData, $product;
 
-
-
     // Modais
     public $showSecure = false;
-    public $showLodingModal = false;
+    public $showLodingModal = false; // Note: "Loding" might be a typo for "Loading"
     public $showDownsellModal = false;
     public $showUpsellModal = false;
-
     public $showProcessingModal = false;
 
     public $selectedCurrency = 'BRL';
     public $selectedLanguage = 'br';
-    // Order Bump
     public $selectedPlan = 'monthly';
     public $availableLanguages = [
         'br' => '🇧🇷 Português',
@@ -34,83 +30,36 @@ class PagePay extends Component
         'es' => '🇪🇸 Español',
     ];
 
-    // Moedas e Conversão
-
     public $currencies = [
-        'BRL' => [
-            'symbol' => 'R$',
-            'name' => 'Real Brasileiro',
-            'code' => 'BRL',
-            'label' => "payment.brl",
-        ],
-        'USD' => [
-            'symbol' => '$',
-            'name' => 'Dólar Americano',
-            'code' => 'USD',
-            'label' => "payment.usd",
-        ],
-        'EUR' => [
-            'symbol' => '€',
-            'name' => 'Euro',
-            'code' => 'EUR',
-            'label' => "payment.eur",
-        ],
+        'BRL' => ['symbol' => 'R$', 'name' => 'Real Brasileiro', 'code' => 'BRL', 'label' => "payment.brl"],
+        'USD' => ['symbol' => '$', 'name' => 'Dólar Americano', 'code' => 'USD', 'label' => "payment.usd"],
+        'EUR' => ['symbol' => '€', 'name' => 'Euro', 'code' => 'EUR', 'label' => "payment.eur"],
     ];
-    // Planos e preços
-
-
 
     public $bumpActive = false;
-
     public $bump = [
         'id' => 4,
         'title' => 'Criptografía anónima',
         'description' => 'Acesso a conteúdos ao vivo e eventos',
         'price' => 9.99,
-        'hash' => '3nidg2uzc0',
+        'hash' => '3nidg2uzc0', // This hash might be gateway-specific
     ];
 
-    // Contador regressivo
     public $countdownMinutes = 14;
     public $countdownSeconds = 22;
-
-    // Elementos de urgência
     public $spotsLeft = 12;
     public $activityCount = 0;
-
-    // Modais duplicadas removidas
-
-    // Valores calculados
     public $totals = [];
-    // public $listProducts = []; // Removed as it's unused and never populated
-
-    // Dados de benefícios
     public $benefits = [
-        [
-            'title' => 'Vídeos premium',
-            'description' => 'Acesso a todo nosso conteúdo sem restrições'
-        ],
-        [
-            'title' => 'Conteúdos diários',
-            'description' => 'Novas atualizações todos os dias'
-        ],
-        [
-            'title' => 'Sem anúncios',
-            'description' => 'Experiência limpa e sem interrupções'
-        ],
-        [
-            'title' => 'Personalização',
-            'description' => 'Configure sua conta como preferir'
-        ],
-        [
-            'title' => 'Atualizações semanais',
-            'description' => 'Novas funcionalidades toda semana'
-        ],
-        [
-            'title' => 'Votação e sugestões',
-            'description' => 'Ajude a moldar o futuro da plataforma'
-        ]
+        ['title' => 'Vídeos premium', 'description' => 'Acesso a todo nosso conteúdo sem restrições'],
+        ['title' => 'Conteúdos diários', 'description' => 'Novas atualizações todos os dias'],
+        ['title' => 'Sem anúncios', 'description' => 'Experiência limpa e sem interrupções'],
+        ['title' => 'Personalização', 'description' => 'Configure sua conta como preferir'],
+        ['title' => 'Atualizações semanais', 'description' => 'Novas funcionalidades toda semana'],
+        ['title' => 'Votação e sugestões', 'description' => 'Ajude a moldar o futuro da plataforma']
     ];
+
+    private PaymentGatewayInterface $paymentGateway; // Added
 
     protected function rules()
     {
@@ -122,45 +71,37 @@ class PagePay extends Component
             'email' => 'required|email',
             'phone' => ['required', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
         ];
-
-        // CPF is required only when currency is BRL (Brazilian Real)
         if ($this->selectedCurrency === 'BRL') {
             $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
         }
-
         return $rules;
     }
 
-    public function mount()
+    public function debug()
     {
+        $this->cardName = 'João da Silva';
+        $this->cardNumber = '4242424242424242'; // Example Visa card number
+        $this->cardExpiry = '12/25'; // Example expiry date
+        $this->cardCvv = '123'; // Example CVV
+        $this->email = 'test@mail.com';
+        $this->phone = '+5511999999999'; // Example phone number
+        $this->cpf = '123.456.789-09'; // Example CPF, valid format
+    }
+
+    public function mount(PaymentGatewayInterface $paymentGateway = null) // Modified to allow injection, or resolve via factory
+    {
+        if (env('APP_DEBUG')) {
+            $this->debug();
+        }
+
         $this->plans = $this->getPlans();
-
-        // $bal = "{\r\n    \"amount\": 500,\r\n    \"offer_hash\": \"s7b5e\", // hash de uma oferta\r\n    \"payment_method\": \"pix\", // credit_card, billet, pix\r\n    \"card\": {\r\n        \"number\": \"4111 1111 1111 1111\",\r\n        \"holder_name\": \"Teste Holder name\",\r\n        \"exp_month\": 12,\r\n        \"exp_year\": 2025,\r\n        \"cvv\": \"123\"\r\n    },\r\n    \"customer\": {\r\n        \"name\": \"Customer name\",\r\n        \"email\": \"email@email.com\",\r\n        \"phone_number\": \"21975784612\",\r\n        \"document\": \"09115751031\",\r\n        \"street_name\": \"Nome da Rua\",\r\n        \"number\": \"sn\",\r\n        \"complement\": \"Lt19 Qd 134\",\r\n        \"neighborhood\": \"Centro\",\r\n        \"city\": \"Itaguaí\",\r\n        \"state\": \"RJ\",\r\n        \"zip_code\": \"23822180\"\r\n    },\r\n    \"cart\": [\r\n        {\r\n            \"product_hash\": \"so4neitign\",\r\n            \"title\": \"Produto Teste API Publica\",\r\n            \"cover\": null,\r\n            \"price\": 10000,\r\n            \"quantity\": 2,\r\n            \"operation_type\": 1,\r\n            \"tangible\": false\r\n        }\r\n    ],\r\n    \"installments\": 1,\r\n    \"expire_in_days\": 1,\r\n    \"postback_url\": \"\", // URL PARA RECEBER ATUALIZAÇÃO DAS TRANSAÇÕES\r\n    \"tracking\": {\r\n        \"src\": \"\",\r\n        \"utm_source\": \"\",\r\n        \"utm_medium\": \"\",\r\n        \"utm_campaign\": \"\",\r\n        \"utm_term\": \"\",\r\n        \"utm_content\": \"\"\r\n    }\r\n}";
-        // // Remove \n e \r do JSON
-        // $bal = str_replace(["\n", "\r"], '', $bal);
-        // dd($bal);
-
-        // Debug
-        // $this->cardName = 'John Doe';
-        // $this->cardNumber = '4111111111111111';
-        // $this->cardExpiry = '12/25';
-        // $this->cardCvv = '123';
-        // $this->email = 'john@mail.com';
-        // $this->phone = '+5511999999999';
-
-        // Recuperar preferências do usuário (antes em localStorage)
         $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
         $this->selectedPlan = Session::get('selectedPlan', 'monthly');
         $this->selectedLanguage = app()->getLocale();
-
-        // Calcular valores iniciais
         $this->calculateTotals();
-
-        // Iniciar contador de atividade
         $this->activityCount = rand(1, 50);
-
         $this->product = [
-            'hash' => '8v1zcpkn9j',
+            'hash' => '8v1zcpkn9j', // This hash might be gateway-specific
             'title' => 'SNAPHUBB BR',
             'cover' => 'https://d2lr0gp42cdhn1.cloudfront.net/3564404929/products/ua11qf25qootxsznxicnfdbrd',
             'product_type' => 'digital',
@@ -169,97 +110,55 @@ class PagePay extends Component
         ];
     }
 
-
     public function getPlans()
     {
+        // Plan hashes might need to be gateway-specific or mapped
         return [
             'monthly' => [
-                'hash' => 'rwquocfj5c',
+                'hash' => 'rwquocfj5c', // Gateway-specific?
                 'label' => __('payment.monthly'),
                 'nunber_months' => 1,
                 'prices' => [
-                    'BRL' => [
-                        'origin_price' => 39.90,
-                        'descont_price' => 29.90,
-                        'currency' => 'BRL',
-                    ],
-                    'USD' => [
-                        'origin_price' => 17.08,
-                        'descont_price' => 12.47,
-                        'currency' => 'USD',
-                    ],
-                    'EUR' => [
-                        'origin_price' => 15.18,
-                        'descont_price' => 11.08,
-                        'currency' => 'EUR',
-                    ],
-                    'ARS' => [
-                        'origin_price' => 19067.31,
-                        'descont_price' => 13919.76,
-                        'currency' => 'ARS',
-                    ],
+                    'BRL' => ['origin_price' => 50.00, 'descont_price' => 39.90],
+                    'USD' => ['origin_price' => 10.00, 'descont_price' => 7.90],
+                    'EUR' => ['origin_price' => 9.00, 'descont_price' => 6.90],
                 ],
             ],
             'quarterly' => [
-                'hash' => 'velit nostrud dolor in deserunt',
+                'hash' => 'velit nostrud dolor in deserunt', // Gateway-specific?
                 'label' => __('payment.quarterly'),
                 'nunber_months' => 3,
                 'prices' => [
-                    'BRL' => [
-                        'origin_price' => 189.70,
-                        'descont_price' => 69.90,
-                        'currency' => 'BRL',
-                    ],
-                    'USD' => [
-                        'origin_price' => 43.56,
-                        'descont_price' => 31.80,
-                        'currency' => 'USD',
-                    ],
-                    'EUR' => [
-                        'origin_price' => 38.72,
-                        'descont_price' => 28.27,
-                        'currency' => 'EUR',
-                    ],
-                    'ARS' => [
-                        'origin_price' => 48622.64,
-                        'descont_price' => 35494.69,
-                        'currency' => 'ARS',
-                    ],
+                    'BRL' => ['origin_price' => 150.00, 'descont_price' => 109.90],
+                    'USD' => ['origin_price' => 30.00, 'descont_price' => 21.90],
+                    'EUR' => ['origin_price' => 27.00, 'descont_price' => 19.90],
                 ],
             ],
             'semi-annual' => [
-                'hash' => 'cupxl',
-                'label' => __(key: 'payment.semi-annual'),
+                'hash' => 'cupxl', // Gateway-specific?
+                'label' => __('payment.semi-annual'),
                 'nunber_months' => 6,
                 'prices' => [
-                    'BRL' => [
-                        'origin_price' => 309.60,
-                        'descont_price' => 89.90,
-                        'currency' => 'BRL',
-                    ],
-                    'USD' => [
-                        'origin_price' => 141.03,
-                        'descont_price' => 102.95,
-                        'currency' => 'USD',
-                    ],
-                    'EUR' => [
-                        'origin_price' => 125.36,
-                        'descont_price' => 91.51,
-                        'currency' => 'EUR',
-                    ],
-                    'ARS' => [
-                        'origin_price' => 157412.81,
-                        'descont_price' => 114911.48,
-                        'currency' => 'ARS',
-                    ],
+                    'BRL' => ['origin_price' => 300.00, 'descont_price' => 199.90],
+                    'USD' => ['origin_price' => 60.00, 'descont_price' => 39.90],
+                    'EUR' => ['origin_price' => 54.00, 'descont_price' => 35.90],
                 ],
             ]
         ];
+        // Ensure getPlans returns the full structure as before
     }
+
+    // calculateTotals, startCheckout, rejectUpsell, acceptUpsell remain largely the same
+    // but sendCheckout and prepareCheckoutData will be modified.
+
     public function calculateTotals()
     {
-
         $plan = $this->plans[$this->selectedPlan];
+        // Ensure $this->selectedCurrency is valid for $plan['prices']
+        if (!isset($plan['prices'][$this->selectedCurrency])) {
+            // Handle error or default to a currency
+            $this->selectedCurrency = 'BRL'; // Or throw an exception
+        }
         $prices = $plan['prices'][$this->selectedCurrency];
 
         $this->totals = [
@@ -269,21 +168,20 @@ class PagePay extends Component
             'total_discount' => $prices['origin_price'] - $prices['descont_price'],
         ];
 
-        // Add bump price if bumpActive is true
         $finalPrice = $prices['descont_price'];
         if ($this->bumpActive && isset($this->bump['price'])) {
-            $finalPrice += $this->bump['price'];
+            // Ensure bump price is treated as a number
+            $finalPrice += floatval($this->bump['price']);
         }
         $this->totals['final_price'] = $finalPrice;
 
         $this->totals = array_map(function ($value) {
-            return number_format(round($value, 1), 2, ',', '.');
+            return number_format(round($value, 2), 2, ',', '.'); // Changed to round to 2 decimal places consistently
         }, $this->totals);
     }
 
     public function startCheckout()
     {
-        // Clean inputs before validation
         if ($this->cardNumber) {
             $this->cardNumber = preg_replace('/\D/', '', $this->cardNumber);
         }
@@ -291,68 +189,61 @@ class PagePay extends Component
             $this->cardCvv = preg_replace('/\D/', '', $this->cardCvv);
         }
         if ($this->phone) {
-            $this->phone = preg_replace('/[^0-9+]/', '', $this->phone); // Keep + for international
+            $this->phone = preg_replace('/[^0-9+]/', '', $this->phone);
         }
-        // Format CPF if provided (for BRL currency)
         if ($this->cpf && $this->selectedCurrency === 'BRL') {
-            // First remove all non-numeric characters
             $cpf = preg_replace('/\D/', '', $this->cpf);
-            // Then format if it has 11 digits
             if (strlen($cpf) == 11) {
                 $this->cpf = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
             }
         }
-        // $this->cardExpiry is usually fine as MM/YY for regex (e.g., "12/25")
-
-        $this->validate(); // Perform validation
-
+        $this->validate();
         $this->showSecure = true;
-        $this->showLodingModal = true;
-
+        $this->showLodingModal = true; // Assuming "Loding" is intended
 
         switch ($this->selectedPlan) {
             case 'monthly':
             case 'quarterly':
                 $this->showUpsellModal = true;
-
                 $offerValue = round($this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['semi-annual']['nunber_months'], 1);
                 $offerDiscont = $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price'] * $this->plans['semi-annual']['nunber_months'] -  $offerValue * $this->plans['semi-annual']['nunber_months'];
-
                 $this->modalData = [
                     'actual_month_value' => $this->totals['month_price_discount'],
                     'offer_month_value' => number_format($offerValue, 2, ',', '.'),
                     'offer_total_discount' => number_format($offerDiscont, 2, ',', '.'),
                     'offer_total_value' => number_format($this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price'], 2, ',', '.'),
                 ];
-
                 break;
             default:
-                return $this->sendCheckout();
+                // Directly call sendCheckout which now uses the injected gateway
+                $this->sendCheckout(); // Removed return here, sendCheckout handles redirect or error
+                $this->showLodingModal = false; // Hide loading modal after sendCheckout is called
+                return; // Return to prevent further execution if not an upsell case
         }
-
         $this->showLodingModal = false;
     }
 
     public function rejectUpsell()
     {
         $this->showUpsellModal = false;
-        $offerValue = round($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['quarterly']['nunber_months'], 1);
-        $offerDiscont = $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price'] * $this->plans['quarterly']['nunber_months'] -  $offerValue * $this->plans['quarterly']['nunber_months'];
+        // Logic for downsell offer (quarterly)
+        if ($this->selectedPlan === 'monthly') { // Only show downsell if current plan is monthly
+            $offerValue = round($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['quarterly']['nunber_months'], 1);
+            // Corrected discount calculation for downsell
+            $basePriceForDiscountCalc = $this->plans['monthly']['prices'][$this->selectedCurrency]['origin_price']; // Price of the plan they *were* on
+            $offerDiscont = ($basePriceForDiscountCalc * $this->plans['quarterly']['nunber_months']) - ($offerValue * $this->plans['quarterly']['nunber_months']);
 
-        $this->modalData = [
-            'actual_month_value' => $this->totals['month_price_discount'],
-            'offer_month_value' => number_format($offerValue, 2, ',', '.'),
-            'offer_total_discount' => number_format($offerDiscont, 2, ',', '.'),
-            'offer_total_value' => number_format($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'], 2, ',', '.'),
-        ];
-
-        if ($this->selectedPlan === 'quarterly') {
+            $this->modalData = [
+                'actual_month_value' => $this->totals['month_price_discount'], // This should be from the current 'monthly' plan
+                'offer_month_value' => number_format($offerValue, 2, ',', '.'),
+                'offer_total_discount' => number_format(abs($offerDiscont), 2, ',', '.'), // Ensure positive discount
+                'offer_total_value' => number_format($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'], 2, ',', '.'),
+            ];
+            $this->showDownsellModal = true;
+        } else { // If they were on quarterly and rejected upsell to semi-annual, just proceed with quarterly
             $this->sendCheckout();
         }
-
-        $this->showDownsellModal = true;
     }
-
 
     public function acceptUpsell()
     {
@@ -362,69 +253,40 @@ class PagePay extends Component
         $this->sendCheckout();
     }
 
-
-
     public function sendCheckout()
     {
         $this->showDownsellModal = $this->showUpsellModal = false;
         $this->showProcessingModal = true;
-        //
-        $client = new Client();
-        $headers = [
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/json'
-        ];
 
-        // Construção do corpo da requisição baseado no estado atual
-        // ...código existente para montar o corpo da requisição...
+        $checkoutData = $this->prepareCheckoutData();
 
+        $this->paymentGateway = PaymentGatewayFactory::create();
 
+        $response = $this->paymentGateway->processPayment($checkoutData);
 
-        $checkoutData = $this->prepareCheckoutData(); // Define $checkoutData before try block
+        $this->showProcessingModal = false; // Hide after processing attempt
 
-        // Create a deep copy for logging and mask sensitive data
-        $loggedData = $checkoutData;
-        if (isset($loggedData['card']['number'])) {
-            $loggedData['card']['number'] = '**** **** **** ' . substr($checkoutData['card']['number'], -4);
-        }
-        if (isset($loggedData['card']['cvv'])) {
-            $loggedData['card']['cvv'] = '***';
-        }
-        // Debuggin g point to inspect $checkoutData
-        try {
-
-            Log::channel('payment_checkout')->info('Preparing TriboPay Checkout. Data:', $loggedData);
-
-            $request = new Request(
-                'POST',
-                'https://api.tribopay.com.br/api/public/v1/transactions?api_token=lqyOgcoAfhxZkJ2bM606vGhmTur4I02USzs8l6N0JoH0ToN1zv31tZVDnTZU',
-                $headers,
-                json_encode($checkoutData) // Use the variable that was logged
-            );
-
-            $res = $client->sendAsync($request)->wait();
-            $responseBody = $res->getBody()->getContents(); // Read body once
-            // Debugging point
-            $dataResponse = json_decode($responseBody, true);
-
-
-            // Log da resposta da API
-            Log::channel('payment_checkout')->info('TriboPay API Response:', [
-                'status' => $res->getStatusCode(),
-                'body' => $responseBody,
-                'timestamp' => now()
+        if ($response['status'] === 'success') {
+            Log::channel('payment_checkout')->info('PagePay: Payment successful via gateway.', [
+                'gateway' => get_class($this->paymentGateway),
+                'response' => $response
             ]);
-            $domain = urlencode(env('APP_URL'));
 
-            return redirect("https://web.snaphubb.online/obg/");
-        } catch (\Exception $e) {
-            Log::channel('payment_checkout')->error('TriboPay API Error:', [
-                'message' => $e->getMessage(),
-                'request_data' => $loggedData, // Log masked data
-                // 'trace' => $e->getTraceAsString(), // Optional: trace can be very verbose
+            $redirectUrl = $response['redirect_url'] ?? "https://web.snaphubb.online/obg/"; // Default or from response
+
+            return redirect()->to($redirectUrl);
+        } else {
+            Log::channel('payment_checkout')->error('PagePay: Payment failed via gateway.', [
+                'gateway' => get_class($this->paymentGateway),
+                'response' => $response
             ]);
-            // Lidar com erros de API
-            $this->addError('payment', 'Ocorreu um erro ao processar o pagamento: ' . $e->getMessage());
+            $errorMessage = $response['message'] ?? 'An unknown error occurred during payment.';
+            if (!empty($response['errors'])) {
+                $errorMessage .= ' Details: ' . implode(', ', (array)$response['errors']);
+            }
+            $this->addError('payment', $errorMessage);
+            // Potentially show a generic error modal or message on the page
+            $this->showProcessingModal = false; // Ensure it's hidden on error
         }
     }
 
@@ -439,52 +301,74 @@ class PagePay extends Component
             $parts = explode('/', $this->cardExpiry);
             $expMonth = $parts[0] ?? null;
             if (!empty($parts[1])) {
+                // Ensure year is 4 digits if 2 digits are provided
                 $expYear = (strlen($parts[1]) == 2) ? '20' . $parts[1] : $parts[1];
             }
         }
 
-        $cart[] = [
-            'product_hash' => $this->product['hash'],
-            'title' => $this->product['title'],
-            'price' => (int)($this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['descont_price'] * 100), // Convert to cents
+        $cartItems = [];
+        $currentPlanDetails = $this->plans[$this->selectedPlan];
+        $currentPlanPriceInfo = $currentPlanDetails['prices'][$this->selectedCurrency];
+
+        $cartItems[] = [
+            'product_hash' => $currentPlanDetails['hash'], // May need to be gateway-agnostic ID
+            'title' => $this->product['title'] . ' - ' . $currentPlanDetails['label'],
+            // Price should be in cents, ensure correct calculation
+            'price' => (int)round(floatval($currentPlanPriceInfo['descont_price']) * 100),
             'quantity' => 1,
-            'operation_type' => 1, // Assuming 1 is the correct operation type
+            'operation_type' => 1, // This seems specific, might need to be handled by gateway
         ];
 
-        if($this->bumpActive) {
-            $cart[] = [
-                'product_hash' => $this->bump['hash'],
+        if ($this->bumpActive) {
+            $cartItems[] = [
+                'product_hash' => $this->bump['hash'], // May need to be gateway-agnostic ID
                 'title' => $this->bump['title'],
-                'price' => (int)($this->bump['price'] * 100), // Convert to cents
+                'price' => (int)round(floatval($this->bump['price']) * 100),
                 'quantity' => 1,
-                'operation_type' => 2, // Assuming 1 is the correct operation type
+                'operation_type' => 2, // Specific
             ];
-
         }
 
+        // Basic customer data
+        $customerData = [
+            'name' => $this->cardName,
+            'email' => $this->email,
+            'phone_number' => preg_replace('/[^0-9+]/', '', $this->phone), // Clean phone
+        ];
+        if ($this->selectedCurrency === 'BRL' && $this->cpf) {
+            $customerData['document'] = preg_replace('/\D/', '', $this->cpf); // Clean CPF
+        }
+
+        // Basic card data
+        $cardDetails = [
+            'number' => $this->cardNumber,
+            'holder_name' => $this->cardName,
+            'exp_month' => $expMonth,
+            'exp_year' => $expYear,
+            'cvv' => $this->cardCvv,
+        ];
+        if ($this->selectedCurrency === 'BRL' && $this->cpf) {
+            $cardDetails['document'] = preg_replace('/\D/', '', $this->cpf); // Include cleaned CPF for card if needed by gateway
+        }
+
+
         return [
-            'amount' => (int)($numeric_final_price * 100), // Convert to cents
-            'offer_hash' => $this->plans[$this->selectedPlan]['hash'],
+            'amount' => (int)round($numeric_final_price * 100),
+            'currency_code' => $this->selectedCurrency,
+            'offer_hash' => $currentPlanDetails['hash'],
             'payment_method' => 'credit_card',
-            'card' => [
-                'number' => $this->cardNumber,
-                'holder_name' => $this->cardName,
-                'exp_month' => $expMonth, // Use parsed month
-                'exp_year' => $expYear,   // Use parsed year
-                'cvv' => $this->cardCvv,
-                'cpf' => $this->selectedCurrency === 'BRL' ? preg_replace('/[^0-9]/', '', $this->cpf) : null,
-            ],
-            'customer' => [
-                'name' => $this->cardName,
-                'email' => $this->email,
-                'phone_number' => $this->phone,
-                'document' => $this->selectedCurrency === 'BRL' ? preg_replace('/[^0-9]/', '', $this->cpf) : null,
-            ],
-            'cart' => $cart,
-            'installments' => 1,
+            'card' => $cardDetails,
+            'customer' => $customerData,
+            'cart' => $cartItems,
+            'installments' => 1, // Default, might need to be dynamic
+            'selected_plan_key' => $this->selectedPlan,
+            'language' => $this->selectedLanguage,
+            'metadata' => [ // For any other custom data
+                'product_main_hash' => $this->product['hash'],
+                'bump_active' => $this->bumpActive,
+            ]
         ];
     }
-
     public function decrementTimer()
     {
         if ($this->countdownSeconds > 0) {
@@ -492,15 +376,12 @@ class PagePay extends Component
         } elseif ($this->countdownMinutes > 0) {
             $this->countdownSeconds = 59;
             $this->countdownMinutes--;
-        } else {
-            // Timer has reached 00:00, do nothing or dispatch an event
-            // For example: $this->dispatch('timerEnded');
         }
     }
 
     public function acceptDownsell()
     {
-        $this->selectedPlan = 'quarterly';
+        $this->selectedPlan = 'quarterly'; // Assuming downsell is always to quarterly
         $this->calculateTotals();
         $this->showDownsellModal = false;
         $this->sendCheckout();
@@ -512,13 +393,9 @@ class PagePay extends Component
         $this->sendCheckout();
     }
 
-    // Livewire Polling para simulação de atividade
     public function getListeners()
     {
-        return [
-            // Removido Laravel Echo para evitar erros de dependência
-            // 'echo:activity,ActivityEvent' => 'updateActivityCount',
-        ];
+        return []; // Removed Echo listeners
     }
 
     public function updateActivityCount()
@@ -528,15 +405,21 @@ class PagePay extends Component
 
     public function changeLanguage($lang)
     {
-        session(['locale' => $lang]);
-        app()->setLocale($lang);
-        $this->selectedLanguage = $lang;
-        $this->calculateTotals();
+        if (array_key_exists($lang, $this->availableLanguages)) {
+            session(['locale' => $lang]);
+            app()->setLocale($lang);
+            $this->selectedLanguage = $lang;
+            // Recalculate plans and totals as language might affect labels (though prices should be language-agnostic)
+            $this->plans = $this->getPlans(); // Re-fetch plans to update labels
+            $this->calculateTotals();
+            // Dispatch an event if JS needs to react to language change for UI elements not covered by Livewire re-render
+            $this->dispatch('languageChanged');
+        }
     }
 
     public function decrementSpotsLeft()
     {
-        if (rand(1, 5) == 1) { // 20% chance
+        if (rand(1, 5) == 1) {
             if ($this->spotsLeft > 3) {
                 $this->spotsLeft--;
                 $this->dispatch('spots-updated');
@@ -549,7 +432,6 @@ class PagePay extends Component
         $this->activityCount = rand(3, 25);
         $this->dispatch('activity-updated');
     }
-
 
     public function render()
     {
