@@ -174,7 +174,7 @@
 
                     <!-- Benefits -->
                     <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
-                        <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.premium_benefits') }} - Luiz commit test</h2>
+                        <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.premium_benefits') }}</h2>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="benefits-container">
 
