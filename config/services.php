@@ -47,4 +47,9 @@ return [
         'api_url' => env('FOR4PAYMENT_API_URL', 'https://api.for4payment.com'), // Example URL
     ],
 
+    'stripe' => [
+        'api_secret_key' => env('STRIPE_API_SECRET_KEY'),
+        'api_url' => env('STRIPE_API_URL', 'https://api.stripe.com'),
+    ],
+
 ];

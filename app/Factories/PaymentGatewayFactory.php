@@ -5,6 +5,7 @@ namespace App\Factories;
 use App\Interfaces\PaymentGatewayInterface;
 use App\Services\PaymentGateways\TriboPayGateway;
 use App\Services\PaymentGateways\For4PaymentGateway;
+use App\Services\PaymentGateways\StripeGateway;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
@@ -20,6 +21,8 @@ class PaymentGatewayFactory
         switch (strtolower($gatewayName)) {
             case 'tribopay':
                 return new TriboPayGateway();
+            case 'stripe':
+                return new StripeGateway();                
             case 'for4payment':
                 return new For4PaymentGateway();
             // Add other gateways here
