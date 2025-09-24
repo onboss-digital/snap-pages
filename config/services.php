@@ -48,8 +48,13 @@ return [
     ],
 
     'stripe' => [
+        'api_public_key' => env('STRIPE_API_PUBLIC_KEY'),
         'api_secret_key' => env('STRIPE_API_SECRET_KEY'),
-        'api_url' => env('STRIPE_API_URL', 'https://api.stripe.com'),
+        'api_url' => env('STRIPE_API_URL', 'https://api.stripe.com/v1'),
+    ],
+
+    'streamit' => [
+        'api_url' => env('STREAMIT_API_URL'),
     ],
 
 ];

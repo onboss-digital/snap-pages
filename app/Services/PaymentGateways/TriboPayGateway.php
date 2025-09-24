@@ -15,7 +15,10 @@ class TriboPayGateway implements PaymentGatewayInterface
 
     public function __construct()
     {
-        $this->httpClient = new Client();
+        $this->httpClient = new Client([
+        'verify' => !env('APP_DEBUG'), // <- ignora verificação de certificado SSL
+        'timeout' => 30,   // opcional: tempo limite
+    ]);
         $this->apiToken = config('services.tribopay.api_token'); // Assuming you'll store the API token in config
         $this->apiUrl = config('services.tribopay.api_url'); // Assuming you'll store the API URL in config
     }
@@ -101,5 +104,10 @@ class TriboPayGateway implements PaymentGatewayInterface
                 'original_response' => $responseData
             ];
         }
+    }
+
+    public function formatPlans(mixed $data, string $selectedCurrency): array
+    {
+        return []; //return response for function trbopay
     }
 }
