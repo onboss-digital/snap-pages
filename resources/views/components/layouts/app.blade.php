@@ -1,20 +1,25 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <title>{{ $title ?? 'Page Title' }}</title>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <title>{{ $title ?? 'Page Title' }}</title>
 
-        @yield('head')
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/pages/pay.js'])
 
-    </head>
-    <body>
-        {{ $slot }}
-        @yield('scripts')
-    </body>
+    @yield('head')
+
+    @livewireStyles
+
+</head>
+
+<body>
+    {{ $slot }}
+    @stack('scripts')
+    @livewireScripts
+</body>
+
 </html>
-
-
