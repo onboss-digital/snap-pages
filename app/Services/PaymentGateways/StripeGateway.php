@@ -360,7 +360,7 @@ class StripeGateway implements PaymentGatewayInterface
                 'order_bumps'   => $bumps,
             ];
         }
-
+        dump($result);
         return $result;
     }
 }

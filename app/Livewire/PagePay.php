@@ -144,7 +144,7 @@ class PagePay extends Component
 
     public function getPlans()
     {
-        dump(env('STREAMIT_API_URL'), env('STRIPE_API_URL'));
+        dump(env('STREAMIT_API_URL'), env('STRIPE_API_URL'), env('DEFAULT_PAYMENT_GATEWAY'));
         $headers = [
             'Accept' => 'application/json',
             'Content-Type' => 'application/json'
