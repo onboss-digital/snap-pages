@@ -151,14 +151,14 @@ class PagePay extends Component
 
         $request = new Request(
             'GET',
-            $this->apiUrl . '/get-plans',
+            $this->apiUrl . 'https://snaphubb.com/api/get-plans',
             $headers,
         );
         return $this->httpClient->sendAsync($request)
             ->then(function ($res) {
                 $responseBody = $res->getBody()->getContents();
                 $dataResponse = json_decode($responseBody, true);
-        dump($res);
+        dump($responseBody, $dataResponse);
 
                 $this->paymentGateway = PaymentGatewayFactory::create();
                 $result = $this->paymentGateway->formatPlans($dataResponse, $this->selectedCurrency);
