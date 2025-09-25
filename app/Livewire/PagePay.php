@@ -151,7 +151,7 @@ class PagePay extends Component
 
         $request = new Request(
             'GET',
-            $this->apiUrl . 'https://snaphubb.com/api/get-plans',
+            $this->apiUrl . '/get-plans',
             $headers,
         );
         return $this->httpClient->sendAsync($request)
