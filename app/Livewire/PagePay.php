@@ -166,6 +166,7 @@ class PagePay extends Component
                 return $result;
             })
             ->otherwise(function ($e) {
+                dump($e);
                 \Log::channel('GetPlans')->info('PagePay: GetPlans from streamit.', [
                     'gateway' => $this->gateway,
                     'error' => $e->getMessage(),
