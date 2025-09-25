@@ -158,6 +158,7 @@ class PagePay extends Component
             ->then(function ($res) {
                 $responseBody = $res->getBody()->getContents();
                 $dataResponse = json_decode($responseBody, true);
+        dump($res);
 
                 $this->paymentGateway = PaymentGatewayFactory::create();
                 $result = $this->paymentGateway->formatPlans($dataResponse, $this->selectedCurrency);
