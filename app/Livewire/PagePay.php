@@ -159,11 +159,13 @@ class PagePay extends Component
             ->then(function ($res) {
                 $responseBody = $res->getBody()->getContents();
                 $dataResponse = json_decode($responseBody, true);
-
+                 dump($dataResponse);
                 $this->paymentGateway = PaymentGatewayFactory::create();
                 $result = $this->paymentGateway->formatPlans($dataResponse, $this->selectedCurrency);
                 $this->bumps = $result[$this->selectedPlan]['order_bumps'];
-        dump($result);
+                 dump($result);
+
+        
                 
                 return $result;
             })
