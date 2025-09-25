@@ -184,7 +184,7 @@ class StripeGateway implements PaymentGatewayInterface
                     $results[] = $intent;
                 }
             }
-            
+
             return [
                 'status' => 'success',
                 'data' => [
@@ -232,14 +232,20 @@ class StripeGateway implements PaymentGatewayInterface
                 'limit'   => 100,
             ]);
 
+            // 🔹 Filtra apenas os ativos
+            $activePrices = array_filter($pricesRes['data'] ?? [], static function ($price) {
+                return $price['active'] === true;
+            });
+
+            // 🔹 Mapeia os dados que você precisa
             $prices = array_map(static function ($price) {
                 return [
-                    'id'         => $price['id'] ?? null,
+                    'id'          => $price['id'] ?? null,
                     'unit_amount' => $price['unit_amount'] ?? null,
-                    'currency'   => strtoupper($price['currency'] ?? ''),
-                    'recurring'  => $price['recurring'] ?? null,
+                    'currency'    => strtoupper($price['currency'] ?? ''),
+                    'recurring'   => $price['recurring'] ?? null,
                 ];
-            }, $pricesRes['data'] ?? []);
+            }, $activePrices);
 
             return [
                 'status'  => 'success',
