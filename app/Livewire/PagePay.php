@@ -143,6 +143,7 @@ class PagePay extends Component
 
     public function getPlans()
     {
+        dump(env('STREAMIT_API_URL'), env('STRIPE_API_URL'));
         $headers = [
             'Accept' => 'application/json',
             'Content-Type' => 'application/json'
