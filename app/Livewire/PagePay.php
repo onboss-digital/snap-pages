@@ -121,7 +121,6 @@ class PagePay extends Component
         }
 
         $this->plans = $this->getPlans();
-        dump($this->plans);
         $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
         $this->selectedPlan = Session::get('selectedPlan', 'monthly');
         $this->selectedLanguage = app()->getLocale();
@@ -144,7 +143,6 @@ class PagePay extends Component
 
     public function getPlans()
     {
-        dump(env('STREAMIT_API_URL'), env('STRIPE_API_URL'), env('DEFAULT_PAYMENT_GATEWAY'));
         $headers = [
             'Accept' => 'application/json',
             'Content-Type' => 'application/json'
@@ -159,14 +157,9 @@ class PagePay extends Component
             ->then(function ($res) {
                 $responseBody = $res->getBody()->getContents();
                 $dataResponse = json_decode($responseBody, true);
-                 dump($dataResponse);
                 $this->paymentGateway = PaymentGatewayFactory::create();
                 $result = $this->paymentGateway->formatPlans($dataResponse, $this->selectedCurrency);
-                $this->bumps = $result[$this->selectedPlan]['order_bumps'];
-                 dump($result);
-
-        
-                
+                $this->bumps = $result[$this->selectedPlan]['order_bumps'];                
                 return $result;
             })
             ->otherwise(function ($e) {
