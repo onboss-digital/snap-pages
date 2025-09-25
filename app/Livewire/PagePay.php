@@ -39,22 +39,22 @@ class PagePay extends Component
 
     public $bumpActive = false;
     public $bumps = [
-        [
-            'id' => 4,
-            'title' => 'Criptografía anónima',
-            'description' => 'Acesso a conteúdos ao vivo e eventos',
-            'price' => 9.99,
-            'hash' => '3nidg2uzc0',
-            'active' => false,
-        ],
-        [
-            'id' => 5,
-            'title' => 'Guia Premium',
-            'description' => 'Acesso ao guia completo de estratégias',
-            'price' => 14.99,
-            'hash' => '7fjk3ldw0',
-            'active' => false,
-        ],
+        // [
+        //     'id' => 4,
+        //     'title' => 'Criptografía anónima',
+        //     'description' => 'Acesso a conteúdos ao vivo e eventos',
+        //     'price' => 9.99,
+        //     'hash' => '3nidg2uzc0',
+        //     'active' => false,
+        // ],
+        // [
+        //     'id' => 5,
+        //     'title' => 'Guia Premium',
+        //     'description' => 'Acesso ao guia completo de estratégias',
+        //     'price' => 14.99,
+        //     'hash' => '7fjk3ldw0',
+        //     'active' => false,
+        // ],
     ];
 
     public $countdownMinutes = 14;
@@ -122,6 +122,7 @@ class PagePay extends Component
         }
 
         $this->plans = $this->getPlans();
+        $this->selectedPlan = $this->plans[0];
         $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
         $this->selectedPlan = Session::get('selectedPlan', 'monthly');
         $this->selectedLanguage = app()->getLocale();
