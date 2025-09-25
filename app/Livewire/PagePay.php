@@ -121,6 +121,7 @@ class PagePay extends Component
         }
 
         $this->plans = $this->getPlans();
+        dump($this->plans);
         $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
         $this->selectedPlan = Session::get('selectedPlan', 'monthly');
         $this->selectedLanguage = app()->getLocale();
@@ -212,8 +213,7 @@ class PagePay extends Component
     // but sendCheckout and prepareCheckoutData will be modified.
 
     public function calculateTotals()
-    {
-        dump($this->plans);
+    {        
         $plan = $this->plans[$this->selectedPlan];
         if (!isset($plan['prices'][$this->selectedCurrency])) {
             $this->selectedCurrency = 'BRL';
