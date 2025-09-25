@@ -213,7 +213,7 @@ class PagePay extends Component
 
     public function calculateTotals()
     {
-        dump($plan);
+        dump($this->plans);
         $plan = $this->plans[$this->selectedPlan];
         if (!isset($plan['prices'][$this->selectedCurrency])) {
             $this->selectedCurrency = 'BRL';
