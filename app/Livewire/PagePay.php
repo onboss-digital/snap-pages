@@ -122,7 +122,7 @@ class PagePay extends Component
         }
 
         $this->plans = $this->getPlans();
-        $this->selectedPlan = $this->plans[array_key_first($this->plans)];
+        $this->selectedPlan = array_key_first($this->plans);
         $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
         $this->selectedPlan = Session::get('selectedPlan', 'monthly');
         $this->selectedLanguage = app()->getLocale();
