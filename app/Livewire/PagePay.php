@@ -345,6 +345,7 @@ class PagePay extends Component
         $this->paymentGateway = PaymentGatewayFactory::create();
 
         $response = $this->paymentGateway->processPayment($checkoutData);
+        dump($response);
 
         $this->showProcessingModal = false; // Hide after processing attempt
 
