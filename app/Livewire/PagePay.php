@@ -360,6 +360,9 @@ class PagePay extends Component
             ]);
 
             $this->showSuccessModal = true;
+            $this->showProcessingModal = false; // Ensure it's hidden on erro
+            $this->showErrorModal = false;
+
 
             if (isset($response['data']) && !empty($response['data'])) {
                 // data existe e não está vazia
