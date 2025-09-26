@@ -603,7 +603,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
     <div class="container mx-auto flex flex-col items-center justify-center gap-2">
         <button type="button" id="sticky-checkout-button"
              wire:click.prevent="startCheckout"
-            class="bg-[#E50914] hover:bg-[#B8070F] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center pointer">
+            class="bg-[#E50914] hover:bg-[#B8070F] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center cursor-pointer">
             <span class="truncate">{{ __('payment.start_premium') }}</span>
         </button>
     </div>
