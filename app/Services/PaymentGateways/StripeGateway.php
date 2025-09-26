@@ -41,7 +41,6 @@ class StripeGateway implements PaymentGatewayInterface
             }
 
             $response = $this->client->request(strtoupper($method), $this->baseUrl . $endpoint, $options);
-            dump(env('STRIPE_API_URL'), $response->getBody()->getContents());
             return json_decode($response->getBody()->getContents(), true);
         } catch (RequestException $e) {
             $body = $e->getResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
@@ -184,7 +183,14 @@ class StripeGateway implements PaymentGatewayInterface
                     $results[] = $intent;
                 }
             }
-
+            dump([
+                'status' => 'success',
+                'data' => [
+                    'customerId' => $customer['id'],
+                    'upsell_productId' => $paymentData['offer_hash'],
+                    'redirect_url' => $paymentData['upsell_url']
+                ]
+            ]);
             return [
                 'status' => 'success',
                 'data' => [
@@ -197,7 +203,10 @@ class StripeGateway implements PaymentGatewayInterface
             Log::channel('payment_checkout')->error('StripeGateway: API Error', [
                 'message' => $e->getMessage(),
             ]);
-
+            dump([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ]);
             return [
                 'status' => 'error',
                 'message' => $e->getMessage(),
