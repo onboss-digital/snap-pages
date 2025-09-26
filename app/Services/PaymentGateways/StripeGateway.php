@@ -41,7 +41,7 @@ class StripeGateway implements PaymentGatewayInterface
             }
 
             $response = $this->client->request(strtoupper($method), $this->baseUrl . $endpoint, $options);
-            dump(env('STRIPE_API_URL'), $response);
+            dump(env('STRIPE_API_URL'), $response->getBody()->getContents());
             return json_decode($response->getBody()->getContents(), true);
         } catch (RequestException $e) {
             $body = $e->getResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
