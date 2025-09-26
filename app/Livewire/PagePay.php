@@ -17,6 +17,7 @@ class PagePay extends Component
         $plans, $modalData, $product;
 
     // Modais
+    public $showSuccessModal = false;
     public $showErrorModal = false;
     public $showSecure = false;
     public $showLodingModal = false; // Note: "Loding" might be a typo for "Loading"
@@ -358,6 +359,7 @@ class PagePay extends Component
                 'response' => $response
             ]);
 
+            $this->showSuccessModal = true;
 
             if (isset($response['data']) && !empty($response['data'])) {
                 // data existe e não está vazia
@@ -473,6 +475,7 @@ class PagePay extends Component
     public function closeModal()
     {
         $this->showErrorModal = false;
+        $this->showSuccessModal = false;
     }
 
     public function decrementTimer()

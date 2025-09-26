@@ -709,6 +709,18 @@ $gateway = config('services.default_payment_gateway', 'stripe');
     </div>
 </div>
 
+<!-- Error Modal -->
+<div id="success-modal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if (!$showSuccessModal) hidden @endif">
+    <div class="bg-[#1F1F1F] rounded-xl p-8 max-w-md w-full mx-4 text-center">
+        <h3 class="text-xl font-bold text-white mb-2">{{ __('payment.success') }}</h3>
+            <button id="close-error" wire:click.prevent="closeModal"
+                class="bg-[#42b70a] hover:bg-[#2a7904] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center cursor-pointer">
+                Close
+            </button>
+    </div>
+</div>
+
 <!-- Downsell Modal -->
 <div id="downsell-modal"
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if (!$showDownsellModal) hidden @endif">

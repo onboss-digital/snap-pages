@@ -112,6 +112,7 @@ return [
     'please_wait' => 'Por favor, espera mientras completamos tu suscripción...',
     'processing_error' => 'Error de pago',
     'error' => 'Verifique su tarjeta',
+    'éxito' => 'Pago realizado con éxito',
     
     // Customization
     'customizing' => 'Personalizando tu experiencia premium...',

@@ -112,6 +112,8 @@ return [
     'please_wait' => 'Please wait while we complete your subscription...',
     'processing_error' => 'Payment error',
     'error' => 'check your card',
+    'success' => 'Payment made successfully',
+
 
     // Customization
     'customizing' => 'Customizing your premium experience...',

@@ -117,6 +117,7 @@ return [
     'please_wait' => 'Por favor, aguarde enquanto concluímos sua assinatura...',
     'processing_error' => 'Erro ao pagar',
     'error' => 'verifique seu cartão',
+    'success' => 'Pagamento efetuado com sucesso',
 
 
     // Customization
