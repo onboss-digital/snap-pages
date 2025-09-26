@@ -260,7 +260,7 @@ class PagePay extends Component
                 $this->cpf = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
             }
         }
-        $this->validate();
+        $this->gateway === "stripe" ? null :  $this->validate();
         $this->showSecure = true;
         $this->showLodingModal = true; // Assuming "Loding" is intended
 
@@ -350,9 +350,7 @@ class PagePay extends Component
 
         $checkoutData = $this->prepareCheckoutData();
         $this->paymentGateway = PaymentGatewayFactory::create();
-        dump($checkoutData);
         $response = $this->paymentGateway->processPayment($checkoutData);
-        dump($response);
 
         $this->showProcessingModal = false; // Hide after processing attempt
 

@@ -811,7 +811,6 @@ $gateway = config('services.default_payment_gateway', 'stripe');
         card.mount('#card-element');
 
         card.addEventListener('change', async function(event) {
-            console.log(event);
             document.getElementById('card-errors').textContent = event.error ? event.error.message : '';
             if (event.complete) {
                 console.log('complete');
