@@ -342,6 +342,7 @@ class PagePay extends Component
         $this->showProcessingModal = true;
 
         $checkoutData = $this->prepareCheckoutData();
+        dump($checkoutData);
         $this->paymentGateway = PaymentGatewayFactory::create();
 
         $response = $this->paymentGateway->processPayment($checkoutData);
