@@ -602,7 +602,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 <div id="sticky-summary" class="sticky-summary bg-[#1F1F1F] border-t border-gray-700 md:hidden p-4">
     <div class="container mx-auto flex flex-col items-center justify-center gap-2">
         <button type="button" id="sticky-checkout-button"
-             wire:click.prevent="startCheckout"
+            wire:click.prevent="startCheckout"
             class="bg-[#E50914] hover:bg-[#B8070F] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center cursor-pointer">
             <span class="truncate">{{ __('payment.start_premium') }}</span>
         </button>
@@ -681,6 +681,34 @@ $gateway = config('services.default_payment_gateway', 'stripe');
         </div>
     </div>
 </div>
+
+<!-- Processing Modal -->
+<div id="processing-modal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if (!$showProcessingModal) hidden @endif">
+    <div class="bg-[#1F1F1F] rounded-xl p-8 max-w-md w-full mx-4 text-center">
+        <div class="mb-4">
+            <div
+                class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-[#E50914] border-r-2 border-b-2 border-transparent">
+            </div>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">{{ __('payment.processing_payment') }}</h3>
+        <p class="text-gray-300">{{ __('payment.please_wait') }}</p>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div id="error-modal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if (!$showErrorModal) hidden @endif">
+    <div class="bg-[#1F1F1F] rounded-xl p-8 max-w-md w-full mx-4 text-center">
+        <h3 class="text-xl font-bold text-white mb-2">{{ __('payment.processing_error') }}</h3>
+        <p class="text-gray-300">{{ __('payment.error') }}</p>
+            <button id="close-error" wire:click.prevent="closeModal"
+                class="bg-[#E50914] hover:bg-[#B8070F] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center cursor-pointer">
+                Close
+            </button>
+    </div>
+</div>
+
 <!-- Downsell Modal -->
 <div id="downsell-modal"
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if (!$showDownsellModal) hidden @endif">
@@ -751,22 +779,6 @@ $gateway = config('services.default_payment_gateway', 'stripe');
     </div>
 </div>
 
-<!-- Processing Modal -->
- @if ($showProcessingModal)
-<div id="processing-modal"
-    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-    <div class="bg-[#1F1F1F] rounded-xl p-8 max-w-md w-full mx-4 text-center">
-        <div class="mb-4">
-            <div
-                class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-[#E50914] border-r-2 border-b-2 border-transparent">
-            </div>
-        </div>
-        <h3 class="text-xl font-bold text-white mb-2">{{ __('payment.processing_payment') }}</h3>
-        <p class="text-gray-300">{{ __('payment.please_wait') }}</p>
-    </div>
-</div>
-@endif
-
 <!-- Personalização Modal -->
 <div class="fixed inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center text-white z-50 @if (!$showLodingModal) hidden @endif">
     <svg class="animate-spin h-10 w-10 text-red-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -835,7 +847,9 @@ $gateway = config('services.default_payment_gateway', 'stripe');
             }
         });
     });
-        window.addEventListener('redirectToExternal', event => {
+
+
+    window.addEventListener('redirectToExternal', event => {
         console.log(event);
         window.location.href = event.detail.url;
     });

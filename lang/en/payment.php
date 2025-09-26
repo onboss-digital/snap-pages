@@ -110,6 +110,8 @@ return [
     // Processing
     'processing_payment' => 'Processing payment',
     'please_wait' => 'Please wait while we complete your subscription...',
+    'processing_error' => 'Payment error',
+    'error' => 'check your card',
 
     // Customization
     'customizing' => 'Customizing your premium experience...',

@@ -110,7 +110,9 @@ return [
     // Processing
     'processing_payment' => 'Procesando pago',
     'please_wait' => 'Por favor, espera mientras completamos tu suscripción...',
-
+    'processing_error' => 'Error de pago',
+    'error' => 'Verifique su tarjeta',
+    
     // Customization
     'customizing' => 'Personalizando tu experiencia premium...',
     'optimizing' => 'Optimizando catálogo y recomendaciones 🔍',

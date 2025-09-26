@@ -45,7 +45,6 @@ class StripeGateway implements PaymentGatewayInterface
         } catch (RequestException $e) {
             $body = $e->getResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
             $errorMessage = $body['error']['message'] ?? $e->getMessage();
-            dump($errorMessage);
             throw new \Exception($errorMessage);
         }
     }
@@ -183,14 +182,6 @@ class StripeGateway implements PaymentGatewayInterface
                     $results[] = $intent;
                 }
             }
-            dump([
-                'status' => 'success',
-                'data' => [
-                    'customerId' => $customer['id'],
-                    'upsell_productId' => $paymentData['offer_hash'],
-                    'redirect_url' => $paymentData['upsell_url']
-                ]
-            ]);
             return [
                 'status' => 'success',
                 'data' => [
@@ -201,10 +192,6 @@ class StripeGateway implements PaymentGatewayInterface
             ];
         } catch (\Exception $e) {
             Log::channel('payment_checkout')->error('StripeGateway: API Error', [
-                'message' => $e->getMessage(),
-            ]);
-            dump([
-                'status' => 'error',
                 'message' => $e->getMessage(),
             ]);
             return [

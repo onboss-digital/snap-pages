@@ -115,6 +115,9 @@ return [
     // Processing
     'processing_payment' => 'Processando pagamento',
     'please_wait' => 'Por favor, aguarde enquanto concluímos sua assinatura...',
+    'processing_error' => 'Erro ao pagar',
+    'error' => 'verifique seu cartão',
+
 
     // Customization
     'customizing' => 'Personalizando sua experiência premium...',

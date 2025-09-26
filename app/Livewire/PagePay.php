@@ -17,6 +17,7 @@ class PagePay extends Component
         $plans, $modalData, $product;
 
     // Modais
+    public $showErrorModal = false;
     public $showSecure = false;
     public $showLodingModal = false; // Note: "Loding" might be a typo for "Loading"
     public $showDownsellModal = false;
@@ -111,7 +112,7 @@ class PagePay extends Component
         $this->email = 'test@mail.com';
         $this->phone = '+5511999999999'; // Example phone number
         $this->cpf = '123.456.789-09'; // Example CPF, valid format        
-        $this->paymentMethodId = 'pm_1S5yVwIVhGS3bBwFlcYLzD5X'; //adicione um metodo de pagamento pra testar capture no elements do stripe
+        $this->paymentMethodId = 'pm_1SBQpKIVhGS3bBwFk2Idz2kp'; //'pm_1S5yVwIVhGS3bBwFlcYLzD5X'; //adicione um metodo de pagamento pra testar capture no elements do stripe
     }
 
     public function mount(PaymentGatewayInterface $paymentGateway = null) // Modified to allow injection, or resolve via factory
@@ -159,7 +160,7 @@ class PagePay extends Component
                 $dataResponse = json_decode($responseBody, true);
                 $this->paymentGateway = PaymentGatewayFactory::create();
                 $result = $this->paymentGateway->formatPlans($dataResponse, $this->selectedCurrency);
-                $this->bumps = $result[$this->selectedPlan]['order_bumps'];                
+                $this->bumps = $result[$this->selectedPlan]['order_bumps'];
                 return $result;
             })
             ->otherwise(function ($e) {
@@ -245,65 +246,65 @@ class PagePay extends Component
     public function startCheckout()
     {
         try {
-        if ($this->cardNumber) {
-            $this->cardNumber = preg_replace('/\D/', '', $this->cardNumber);
-        }
-        if ($this->cardCvv) {
-            $this->cardCvv = preg_replace('/\D/', '', $this->cardCvv);
-        }
-        if ($this->phone) {
-            $this->phone = preg_replace('/[^0-9+]/', '', $this->phone);
-        }
-        if ($this->cpf && $this->selectedCurrency === 'BRL') {
-            $cpf = preg_replace('/\D/', '', $this->cpf);
-            if (strlen($cpf) == 11) {
-                $this->cpf = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
+            if ($this->cardNumber) {
+                $this->cardNumber = preg_replace('/\D/', '', $this->cardNumber);
             }
-        }
-        $this->gateway === "stripe" ? null :  $this->validate();
-        $this->showSecure = true;
-        $this->showLodingModal = true; // Assuming "Loding" is intended
-
-        switch ($this->selectedPlan) {
-            case 'monthly':
-            case 'quarterly':
-                if (isset($this->plans['semi-annual'])) {
-                    //$this->showUpsellModal = true;
-
-                    $offerValue = round(
-                        $this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price']
-                            / $this->plans['semi-annual']['nunber_months'],
-                        1
-                    );
-
-                    $offerDiscont = (
-                        $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price']
-                        * $this->plans['semi-annual']['nunber_months']
-                    ) - ($offerValue * $this->plans['semi-annual']['nunber_months']);
-
-                    $this->modalData = [
-                        'actual_month_value'    => $this->totals['month_price_discount'],
-                        'offer_month_value'     => number_format($offerValue, 2, ',', '.'),
-                        'offer_total_discount'  => number_format($offerDiscont, 2, ',', '.'),
-                        'offer_total_value'     => number_format(
-                            $this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price'],
-                            2,
-                            ',',
-                            '.'
-                        ),
-                    ];
-                    break; // só interrompe se o semi-annual existir
+            if ($this->cardCvv) {
+                $this->cardCvv = preg_replace('/\D/', '', $this->cardCvv);
+            }
+            if ($this->phone) {
+                $this->phone = preg_replace('/[^0-9+]/', '', $this->phone);
+            }
+            if ($this->cpf && $this->selectedCurrency === 'BRL') {
+                $cpf = preg_replace('/\D/', '', $this->cpf);
+                if (strlen($cpf) == 11) {
+                    $this->cpf = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
                 }
+            }
+            $this->gateway === "stripe" ? null :  $this->validate();
+            $this->showSecure = true;
+            $this->showLodingModal = true; // Assuming "Loding" is intended
 
-                // se não tem semi-annual, segue fluxo normal (igual default)
-                // não dá break aqui
-            default:
-                $this->sendCheckout();
-                $this->showLodingModal = false;
-                return;
-        }
+            switch ($this->selectedPlan) {
+                case 'monthly':
+                case 'quarterly':
+                    if (isset($this->plans['semi-annual'])) {
+                        //$this->showUpsellModal = true;
+
+                        $offerValue = round(
+                            $this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price']
+                                / $this->plans['semi-annual']['nunber_months'],
+                            1
+                        );
+
+                        $offerDiscont = (
+                            $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price']
+                            * $this->plans['semi-annual']['nunber_months']
+                        ) - ($offerValue * $this->plans['semi-annual']['nunber_months']);
+
+                        $this->modalData = [
+                            'actual_month_value'    => $this->totals['month_price_discount'],
+                            'offer_month_value'     => number_format($offerValue, 2, ',', '.'),
+                            'offer_total_discount'  => number_format($offerDiscont, 2, ',', '.'),
+                            'offer_total_value'     => number_format(
+                                $this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price'],
+                                2,
+                                ',',
+                                '.'
+                            ),
+                        ];
+                        break; // só interrompe se o semi-annual existir
+                    }
+
+                    // se não tem semi-annual, segue fluxo normal (igual default)
+                    // não dá break aqui
+                default:
+                    $this->showProcessingModal = true;
+                    $this->sendCheckout();
+                    $this->showLodingModal = false;
+                    return;
+            }
         } catch (\Exception $e) {
-            dump( $e->getMessage());
             Log::channel('start_checkout')->error('start_checkout: API Error:', [
                 'message' => $e->getMessage(),
             ]);
@@ -345,14 +346,11 @@ class PagePay extends Component
 
     public function sendCheckout()
     {
-        $this->showDownsellModal = $this->showUpsellModal = false;
-        $this->showProcessingModal = true;
+        //$this->showDownsellModal = $this->showUpsellModal = false;        
 
         $checkoutData = $this->prepareCheckoutData();
         $this->paymentGateway = PaymentGatewayFactory::create();
         $response = $this->paymentGateway->processPayment($checkoutData);
-
-        $this->showProcessingModal = false; // Hide after processing attempt
 
         if ($response['status'] === 'success') {
             Log::channel('payment_checkout')->info('PagePay: Payment successful via gateway.', [
@@ -360,13 +358,13 @@ class PagePay extends Component
                 'response' => $response
             ]);
 
-            
+
             if (isset($response['data']) && !empty($response['data'])) {
                 // data existe e não está vazia
                 $customerId = $response['data']['customerId'];
                 $redirectUrl = $response['data']['redirect_url'];
                 $upsell_productId = $response['data']['upsell_productId'];
-                return redirect()->to($redirectUrl ."?customerId=" . $customerId . "&upsell_productId=" . $upsell_productId);
+                return redirect()->to($redirectUrl . "?customerId=" . $customerId . "&upsell_productId=" . $upsell_productId);
             }
             $redirectUrl = $response['redirect_url'] ?? "https://web.snaphubb.online/obg/"; // Default or from response
             return redirect()->to($redirectUrl);
@@ -381,7 +379,8 @@ class PagePay extends Component
             }
             $this->addError('payment', $errorMessage);
             // Potentially show a generic error modal or message on the page
-            $this->showProcessingModal = false; // Ensure it's hidden on error
+            $this->showErrorModal = true;
+            $this->showProcessingModal = false; // Ensure it's hidden on erro
         }
     }
 
@@ -471,6 +470,10 @@ class PagePay extends Component
         ];
     }
 
+    public function closeModal()
+    {
+        $this->showErrorModal = false;
+    }
 
     public function decrementTimer()
     {
