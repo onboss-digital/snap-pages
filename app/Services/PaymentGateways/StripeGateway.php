@@ -46,7 +46,7 @@ class StripeGateway implements PaymentGatewayInterface
         } catch (RequestException $e) {
             $body = $e->getResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
             $errorMessage = $body['error']['message'] ?? $e->getMessage();
-
+            dump($errorMessage);
             throw new \Exception($errorMessage);
         }
     }
