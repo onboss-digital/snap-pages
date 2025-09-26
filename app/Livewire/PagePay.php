@@ -366,7 +366,11 @@ class PagePay extends Component
                 $customerId = $response['data']['customerId'];
                 $redirectUrl = $response['data']['redirect_url'];
                 $upsell_productId = $response['data']['upsell_productId'];
+                if (!empty($redirectUrl)) {
                 return redirect()->to($redirectUrl . "?customerId=" . $customerId . "&upsell_productId=" . $upsell_productId);
+                } else {
+                    return;
+                }
             }
             $redirectUrl = $response['redirect_url'] ?? "https://web.snaphubb.online/obg/"; // Default or from response
             return redirect()->to($redirectUrl);
