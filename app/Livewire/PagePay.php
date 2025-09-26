@@ -244,6 +244,7 @@ class PagePay extends Component
 
     public function startCheckout()
     {
+        try {
         if ($this->cardNumber) {
             $this->cardNumber = preg_replace('/\D/', '', $this->cardNumber);
         }
@@ -300,6 +301,12 @@ class PagePay extends Component
                 $this->sendCheckout();
                 $this->showLodingModal = false;
                 return;
+        }
+        } catch (\Exception $e) {
+            dump( $e->getMessage());
+            Log::channel('start_checkout')->error('start_checkout: API Error:', [
+                'message' => $e->getMessage(),
+            ]);
         }
 
 
