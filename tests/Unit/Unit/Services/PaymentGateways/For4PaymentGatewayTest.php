@@ -6,6 +6,10 @@ use Tests\TestCase;
 use App\Services\PaymentGateways\For4PaymentGateway;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\Attributes\Test;
 
 class For4PaymentGatewayTest extends TestCase
@@ -34,13 +38,34 @@ class For4PaymentGatewayTest extends TestCase
     #[Test]
     public function it_processes_payment_successfully_placeholder()
     {
+        // 1. Mock Guzzle response
+        $mock = new MockHandler([
+            new Response(200, [], json_encode([
+                'success' => true,
+                'transaction_id' => 'f4p_txn_mocked123',
+                'message' => 'Payment successful (mocked).',
+            ])),
+        ]);
+
+        $handlerStack = HandlerStack::create($mock);
+        $mockClient = new Client(['handler' => $handlerStack]);
+
+        // 2. Create gateway and inject mock client
         $gateway = new For4PaymentGateway();
+
+        $reflection = new \ReflectionClass($gateway);
+        $property = $reflection->getProperty('httpClient');
+        $property->setAccessible(true);
+        $property->setValue($gateway, $mockClient);
+
+        // 3. Call the method
         $paymentData = ['amount' => 2000, 'currency' => 'USD', 'token' => 'fake_token'];
         $response = $gateway->processPayment($paymentData);
 
+        // 4. Assert based on the mocked API response and handleResponse logic
         $this->assertEquals('success', $response['status']);
-        $this->assertStringStartsWith('f4p_txn_', $response['transaction_id']);
-        $this->assertEquals('Payment processed successfully (simulated by For4PaymentGateway).', $response['message']);
+        $this->assertEquals('f4p_txn_mocked123', $response['transaction_id']);
+        $this->assertEquals('Payment successful (mocked).', $response['message']);
     }
 
     #[Test]
