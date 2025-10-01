@@ -213,35 +213,72 @@ class PagePay extends Component
     // but sendCheckout and prepareCheckoutData will be modified.
 
     public function calculateTotals()
-    {
-        $plan = $this->plans[$this->selectedPlan];
-        if (!isset($plan['prices'][$this->selectedCurrency])) {
-            $this->selectedCurrency = 'BRL';
-        }
-        $prices = $plan['prices'][$this->selectedCurrency];
-
-        $this->totals = [
-            'month_price' => $prices['origin_price'] / $plan['nunber_months'],
-            'month_price_discount' => $prices['descont_price'] / $plan['nunber_months'],
-            'total_price' => $prices['origin_price'],
-            'total_discount' => $prices['origin_price'] - $prices['descont_price'],
-        ];
-
-        $finalPrice = $prices['descont_price'];
-
-        // soma todos bumps ativos
-        foreach ($this->bumps as $bump) {
-            if (!empty($bump['active'])) {
-                $finalPrice += floatval($bump['price']);
-            }
-        }
-
-        $this->totals['final_price'] = $finalPrice;
-
-        $this->totals = array_map(function ($value) {
-            return number_format(round($value, 2), 2, ',', '.');
-        }, $this->totals);
+{
+    // 1. Verificamos se o plano selecionado realmente existe nos dados da API
+    if (!isset($this->plans[$this->selectedPlan])) {
+        Log::error('Plano selecionado não encontrado na resposta da API.', [
+            'selected_plan' => $this->selectedPlan
+        ]);
+        // Interrompe a execução para evitar erros em cascata
+        return;
     }
+    $plan = $this->plans[$this->selectedPlan];
+
+    // 2. Verificamos se existe um array de preços para o plano
+    if (!isset($plan['prices']) || !is_array($plan['prices'])) {
+        Log::error('Array de preços não encontrado para o plano.', [
+            'plan' => $this->selectedPlan
+        ]);
+        return;
+    }
+
+    // 3. Verificamos se a moeda atual tem um preço definido. Se não, tentamos um fallback.
+    $availableCurrency = null;
+    if (isset($plan['prices'][$this->selectedCurrency])) {
+        $availableCurrency = $this->selectedCurrency;
+    } elseif (isset($plan['prices']['BRL'])) {
+        // Tenta BRL como primeira alternativa
+        $availableCurrency = 'BRL';
+    } elseif (isset($plan['prices']['USD'])) {
+        // Tenta USD como segunda alternativa
+        $availableCurrency = 'USD';
+    }
+    
+    // 4. Se nenhuma moeda válida foi encontrada, interrompemos
+    if (is_null($availableCurrency)) {
+        Log::error('Nenhuma moeda válida (BRL, USD, etc.) encontrada para o plano.', [
+            'plan' => $this->selectedPlan
+        ]);
+        // Opcional: Adiciona uma mensagem de erro para o usuário
+        $this->addError('totals', 'Não foi possível carregar os preços. Tente novamente mais tarde.');
+        return;
+    }
+
+    $this->selectedCurrency = $availableCurrency;
+    $prices = $plan['prices'][$this->selectedCurrency];
+
+    // Daqui para baixo, o código original continua, pois agora temos certeza que a variável $prices existe
+    $this->totals = [
+        'month_price' => $prices['origin_price'] / $plan['nunber_months'],
+        'month_price_discount' => $prices['descont_price'] / $plan['nunber_months'],
+        'total_price' => $prices['origin_price'],
+        'total_discount' => $prices['origin_price'] - $prices['descont_price'],
+    ];
+
+    $finalPrice = $prices['descont_price'];
+
+    foreach ($this->bumps as $bump) {
+        if (!empty($bump['active'])) {
+            $finalPrice += floatval($bump['price']);
+        }
+    }
+
+    $this->totals['final_price'] = $finalPrice;
+
+    $this->totals = array_map(function ($value) {
+        return number_format(round($value, 2), 2, ',', '.');
+    }, $this->totals);
+}
 
 
     public function startCheckout()
