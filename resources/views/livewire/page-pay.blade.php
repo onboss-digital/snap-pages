@@ -200,7 +200,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                 </div>
 
                 <!-- Payment Methods -->
-                <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
+                <div id="payment-method-section" class="bg-[#1F1F1F] rounded-xl p-6 mb-6 scroll-mt-8">
                     <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.payment_method') }}</h2>
 
                     <div class="grid grid-cols-1 gap-3">
@@ -357,7 +357,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                 <!-- Testimonials -->
                 <div class="bg-transparent rounded-xl mb-6">
                     <h2 class="text-2xl font-bold text-white mb-6 text-center">{{ __('checkout.testimonials_title') }}</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         @if(is_array($testimonials) && !empty($testimonials))
                             @foreach (array_slice($testimonials, 0, 4) as $testimonial)
                                 <div class="bg-gray-800 bg-opacity-50 p-6 rounded-xl border border-gray-700 shadow-lg flex flex-col h-full transform transition-transform hover:scale-105">
@@ -753,10 +753,12 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 <script>
     document.addEventListener('livewire:init', () => {
         Livewire.on('validation:failed', () => {
-            const firstError = document.querySelector('[aria-invalid="true"]');
-            if (firstError) {
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                firstError.focus();
+            const paymentSection = document.getElementById('payment-method-section');
+            if (paymentSection) {
+                paymentSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
             }
         });
     });
