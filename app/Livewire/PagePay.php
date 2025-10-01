@@ -403,7 +403,7 @@ class PagePay extends Component
                 $redirectUrl = $response['data']['redirect_url'];
                 $upsell_productId = $response['data']['upsell_productId'];
                 if (!empty($redirectUrl)) {
-                return redirect()->to($redirectUrl . "?customerId=" . $customerId . "&upsell_productId=" . $upsell_productId. "&currency=" . strtoupper($this->selectedCurrency));
+                return redirect()->to($redirectUrl . "?customerId=" . $customerId . "&upsell_productId=" . $upsell_productId);
                 } else {
                     return;
                 }
