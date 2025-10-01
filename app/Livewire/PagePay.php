@@ -236,9 +236,25 @@ class PagePay extends Component
         }
 
         $plan = $this->plans[$this->selectedPlan];
-        if (!isset($plan['prices'][$this->selectedCurrency])) {
-            $this->selectedCurrency = 'BRL';
+
+        // Defensively check for prices and handle currency fallback
+        if (empty($plan['prices'])) {
+            $this->totals = [
+                'month_price' => '0,00',
+                'month_price_discount' => '0,00',
+                'total_price' => '0,00',
+                'total_discount' => '0,00',
+                'final_price' => '0,00',
+            ];
+            return;
         }
+
+        if (!isset($plan['prices'][$this->selectedCurrency])) {
+            // Fallback to the first available currency for the plan
+            reset($plan['prices']);
+            $this->selectedCurrency = key($plan['prices']);
+        }
+
         $prices = $plan['prices'][$this->selectedCurrency];
 
         $this->totals = [
