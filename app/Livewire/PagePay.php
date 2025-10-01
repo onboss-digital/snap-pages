@@ -128,6 +128,7 @@ class PagePay extends Component
         $this->selectedLanguage = app()->getLocale();
         $this->calculateTotals();
         $this->activityCount = rand(1, 50);
+
         if (!empty($this->plans) && isset($this->plans[$this->selectedPlan])) {
             $this->product = [
                 'hash' => $this->plans[$this->selectedPlan]['hash'], // This hash might be gateway-specific
@@ -135,8 +136,9 @@ class PagePay extends Component
                 'price_id' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['id'] ?? null,
             ];
         } else {
+            // Fallback for product if plans are not loaded
             $this->product = [
-                'hash' => 'default-hash',
+                'hash' => 'default-product-hash',
                 'title' => 'Default Product',
                 'price_id' => null,
             ];
@@ -169,7 +171,7 @@ class PagePay extends Component
                 $dataResponse = json_decode($responseBody, true);
                 $this->paymentGateway = PaymentGatewayFactory::create();
                 $result = $this->paymentGateway->formatPlans($dataResponse, $this->selectedCurrency);
-                if (!empty($result) && isset($result[$this->selectedPlan])) {
+                if (isset($result[$this->selectedPlan])) {
                     $this->bumps = $result[$this->selectedPlan]['order_bumps'];
                 }
                 return $result;
@@ -226,10 +228,8 @@ class PagePay extends Component
     {
         if (empty($this->plans) || !isset($this->plans[$this->selectedPlan])) {
             $this->totals = [
-                'month_price' => '0,00',
-                'month_price_discount' => '0,00',
-                'total_price' => '0,00',
-                'total_discount' => '0,00',
+                'month_price' => '0,00', 'month_price_discount' => '0,00',
+                'total_price' => '0,00', 'total_discount' => '0,00',
                 'final_price' => '0,00',
             ];
             return;
@@ -237,20 +237,16 @@ class PagePay extends Component
 
         $plan = $this->plans[$this->selectedPlan];
 
-        // Defensively check for prices and handle currency fallback
         if (empty($plan['prices'])) {
             $this->totals = [
-                'month_price' => '0,00',
-                'month_price_discount' => '0,00',
-                'total_price' => '0,00',
-                'total_discount' => '0,00',
+                'month_price' => '0,00', 'month_price_discount' => '0,00',
+                'total_price' => '0,00', 'total_discount' => '0,00',
                 'final_price' => '0,00',
             ];
             return;
         }
 
         if (!isset($plan['prices'][$this->selectedCurrency])) {
-            // Fallback to the first available currency for the plan
             reset($plan['prices']);
             $this->selectedCurrency = key($plan['prices']);
         }
