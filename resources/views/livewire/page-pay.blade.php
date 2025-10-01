@@ -135,10 +135,10 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                 </div>
             </div>
 
-            <div class="mt-6 w-full rounded-xl overflow-hidden relative bg-gray-900 aspect-[9/16] md:aspect-[21/9]">
+            <div class="mt-6 w-full rounded-xl overflow-hidden relative bg-gray-900 aspect-square md:aspect-auto md:h-[400px]">
                 <!-- Banners -->
-                <img class="absolute inset-0 w-full h-full object-cover hidden md:block" src="{{ __('checkout.banner_desktop') }}" alt="Promotional Banner">
-                <img class="absolute inset-0 w-full h-full object-cover block md:hidden" src="{{ __('checkout.banner_mobile') }}" alt="Promotional Banner">
+                <img class="absolute inset-0 w-full h-full object-cover" src="{{ __('checkout.banner_desktop') }}" alt="Promotional Banner">
+                <img class="absolute inset-0 w-full h-full object-cover" src="{{ __('checkout.banner_mobile') }}" alt="Promotional Banner">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent"></div>
             </div>
 
@@ -319,7 +319,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                 </div>
 
                 <!-- Order Bumps -->
-                <div class="bg-[#1F1F1F] rounded-xl p-5 mb-6 border border-gray-700">
+                <div class="bg-[#1F1F1F] rounded-xl p-5 border border-gray-700">
                     @foreach ($bumps as $index => $bump)
                     <div class="flex items-start mb-4 last:mb-0">
                         <div class="flex items-center h-5">
