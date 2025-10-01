@@ -3,8 +3,9 @@
 return [
     // Header
     'title' => 'SNAPHUBB Premium - Checkout',
-    'start_subscription' => 'Start your Premium subscription',
-    'unlock_access' => 'Unlock exclusive access to all our premium content.',
+    'start_subscription' => "You're 1 step away from unlocking all premium content 🎯",
+    'unlock_access' => 'Unlock exclusive access to all our premium content',
+    'banner_url' => 'https://web.snaphubb.online/wp-content/uploads/2025/09/banner-estados-unidos.jpg',
 
     // Currency
     'select_currency' => 'Select your currency',
@@ -37,6 +38,7 @@ return [
     'security_code' => 'Security code',
     'card_name' => 'Name on card',
     'email' => 'Email',
+    'email_helper' => 'To receive your access and updates',
     'phone' => 'Phone number',
     'cpf' => 'CPF (required for payments in Brazil)',
 
@@ -50,10 +52,14 @@ return [
     // Testimonials
     'subscribers_say' => 'What our subscribers say',
     'days_ago' => 'days ago',
-    'testimonial_1' => 'Subscriber for 6 months and no regrets! The content is amazing and always updated. The exclusive live sessions are the best benefit, I learn a lot from the experts.',
-    'testimonial_2' => 'Worth every penny! I signed up for the annual plan and saved a lot. The ability to access all content offline is perfect for when I\'m traveling.',
-    'subscriber_1' => 'Carlos M. - São Paulo',
-    'subscriber_2' => 'Ana P. - Rio de Janeiro',
+    'testimonial_1' => "I've been a subscriber for 5 months and I don't regret it! The content is insatiable and always updated. The variety here makes other services look like a shelf of children's movies.",
+    'testimonial_2' => "Worth every penny! The streaming quality is insane, it never freezes. And being able to download everything to watch offline... it's the perfect privacy for when I'm traveling for business.",
+    'testimonial_3' => "The best value for money I've ever seen. Content always in 4K that makes you drool, zero ads to kill the mood, and new releases that are piping hot. I recommend it to anyone who knows what they want.",
+    'testimonial_4' => "The interface is so easy it's like it reads my mind, and the catalog is a beast. I canceled my old subscription without a second thought and the savings were huge. The support, when I needed it for a silly question, was fast and straightforward.",
+    'subscriber_1' => 'Michael B. - New York',
+    'subscriber_2' => 'David S. - Los Angeles',
+    'subscriber_3' => 'James P. - Miami',
+    'subscriber_4' => 'John D. - Chicago',
 
     // Order Summary
     'order_summary' => 'Order Summary',
@@ -76,13 +82,15 @@ return [
     'discount' => 'Discount:',
     'total_to_pay' => 'TOTAL TO PAY:',
     'spots_left' => 'Only <span id="spots-left">12</span> spots left!',
+    'spots_remaining' => 'SPOTS REMAINING:',
+    'spots_remaining_lot' => '(current batch)',
     'people_finishing' => '<strong id="activityCounter">10</strong> people are checking out now!',
 
     // Security
     'checking_secure' => 'Checking secure environment...',
 
     // Action Buttons
-    'start_premium' => 'START PREMIUM SUBSCRIPTION',
+    'start_premium' => 'SECURE MY ACCESS NOW',
     '7_day_guarantee' => '7-day guarantee',
     'secure_ssl' => 'Secure SSL',
     'easy_cancel' => 'Easy cancellation',

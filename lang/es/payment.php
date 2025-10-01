@@ -3,8 +3,9 @@
 return [
     // Header
     'title' => 'SNAPHUBB Premium - Checkout',
-    'start_subscription' => 'Inicia tu suscripción Premium',
-    'unlock_access' => 'Desbloquea acceso exclusivo a todo nuestro contenido premium.',
+    'start_subscription' => 'Estás a 1 paso de desbloquear todo el contenido premium 🎯',
+    'unlock_access' => 'Desbloquea acceso exclusivo a todo nuestro contenido premium',
+    'banner_url' => 'https://web.snaphubb.online/wp-content/uploads/2025/09/banner-mexico.jpg',
 
     // Currency
     'select_currency' => 'Selecciona tu moneda',
@@ -37,6 +38,7 @@ return [
     'security_code' => 'Código de seguridad',
     'card_name' => 'Nombre en la tarjeta',
     'email' => 'Correo electrónico',
+    'email_helper' => 'Para recibir tu acceso y actualizaciones',
     'phone' => 'Teléfono',
     'cpf' => 'CPF (obligatorio para pagos en Brasil)',
 
@@ -50,14 +52,18 @@ return [
     // Testimonials
     'subscribers_say' => 'Lo que dicen nuestros suscriptores',
     'days_ago' => 'hace 3 días',
-    'testimonial_1' => '¡Suscriptor desde hace 6 meses y no me arrepiento! El contenido es increíble y siempre actualizado. Las transmisiones exclusivas son el mejor beneficio, aprendo mucho de los expertos.',
-    'testimonial_2' => '¡Vale cada centavo! Me suscribí al plan anual y ahorré mucho. La posibilidad de acceder a todo el contenido sin conexión es perfecta para cuando estoy viajando.',
-    'subscriber_1' => 'Carlos M. - São Paulo',
-    'subscriber_2' => 'Ana P. - Río de Janeiro',
+    'testimonial_1' => 'Me suscribí hace 5 meses y no me arrepiento! El contenido es insaciable y siempre actualizado. La variedad aquí hace que otros servicios parezcan una estantería de películas para niños.',
+    'testimonial_2' => '¡Vale cada centavo! La calidad del streaming es una locura, nunca se corta. Y poder descargar todo para verlo sin conexión... es la privacidad perfecta para cuando viajo por negocios.',
+    'testimonial_3' => 'La mejor relación calidad-precio que he visto. Contenido siempre en 4K que te hace babear, cero anuncios para cortar el rollo y estrenos que llegan al rojo vivo. Lo recomiendo para quien sabe lo que quiere.',
+    'testimonial_4' => 'La interfaz es tan fácil que parece que me lee la mente, y el catálogo es un monstruo. Cancelé mi antigua suscripción sin pensarlo dos veces y el ahorro fue grande. El soporte, cuando lo necesité para una duda tonta, fue rápido y directo.',
+    'subscriber_1' => 'Carlos M. - Ciudad de México',
+    'subscriber_2' => 'Javier G. - Buenos Aires',
+    'subscriber_3' => 'Alejandro P. - Madrid',
+    'subscriber_4' => 'Mateo R. - Bogotá',
 
     // Order Summary
     'order_summary' => 'Resumen del pedido',
-    'offer_expires' => 'La oferta expira en',
+    'offer_expires' => 'Oferta expira en',
     'select_plan' => 'Selecciona tu plan',
     'monthly' => 'Mensual',
     'quarterly' => 'Trimestral (10% descuento)',
@@ -76,13 +82,15 @@ return [
     'discount' => 'Descuento:',
     'total_to_pay' => 'TOTAL A PAGAR:',
     'spots_left' => '¡Solo quedan <span id="spots-left">12</span> plazas!',
+    'spots_remaining' => 'CUPOS RESTANTES:',
+    'spots_remaining_lot' => '(del lote actual)',
     'people_finishing' => '<strong id="activityCounter">10</strong> personas están finalizando ahora!',
 
     // Security
     'checking_secure' => 'Verificando ambiente seguro...',
 
     // Action Buttons
-    'start_premium' => 'INICIAR SUSCRIPCIÓN PREMIUM',
+    'start_premium' => 'GARANTIZAR MI ACCESO AHORA',
     '7_day_guarantee' => 'Garantía de 7 días',
     'secure_ssl' => 'SSL Seguro',
     'easy_cancel' => 'Cancelación fácil',

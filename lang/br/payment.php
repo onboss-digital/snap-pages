@@ -3,9 +3,10 @@
 return [
     // Header
     'title' => 'SNAPHUBB Premium - Checkout',
-    'start_subscription' => "FALTA POUCO...",
+    'start_subscription' => "Você está a 1 passo de desbloquear todo o conteúdo premium 🎯",
     'start_subscription2' => "preencha os dados a baixo",
-    'unlock_access' => 'Desbloqueie acesso exclusivo a todo nosso conteúdo premium.',
+    'unlock_access' => 'Desbloqueie acesso exclusivo a todo nosso conteúdo premium',
+    'banner_url' => 'https://web.snaphubb.online/wp-content/uploads/2025/09/banner-brasil.jpg',
 
     // Currency
     'select_currency' => 'Selecione sua moeda',
@@ -38,6 +39,7 @@ return [
     'security_code' => 'Código de segurança',
     'card_name' => 'Nome no cartão',
     'email' => 'E-mail',
+    'email_helper' => 'Para receber seu acesso e atualizações',
     'phone' => 'Telefone',
     'cpf' => 'CPF (obrigatório para pagamentos no Brasil)',
 
@@ -53,10 +55,14 @@ return [
     // Testimonials
     'subscribers_say' => 'O que dizem nossos assinantes',
     'days_ago' => 'há 3 dias',
-    'testimonial_1' => 'Assinante há 6 meses e não me arrependo! O conteúdo é incrível e sempre atualizado. A votação para nova modelo é muito boa, sempre novas modelos.',
-    'testimonial_2' => 'Vale cada centavo! Assinei e economizei muito. A possibilidade de acessar todo o conteúdo offline é perfeita para quando estou viajando.',
+    'testimonial_1' => 'Assinei há 5 meses e não me arrependo! O conteúdo é insaciável e sempre atualizado. A variedade aqui faz os outros serviços parecerem uma prateleira de filme infantil.',
+    'testimonial_2' => 'Vale cada centavo! A qualidade do streaming é doentia, nunca trava. E poder baixar tudo pra assistir offline... é a privacidade perfeita para quando estou viajando a negócios.',
+    'testimonial_3' => 'O melhor custo-benefício que já vi. Conteúdo sempre em 4K que te faz babar, zero propagandas pra cortar o clima e lançamentos novos que chegam fervendo. Recomendo pra quem sabe o que quer.',
+    'testimonial_4' => 'A interface é tão fácil que parece que lê minha mente, e o catálogo é um monstro. Cancelei minha assinatura antiga sem pensar duas vezes e a economia foi grande. O suporte, quando precisei pra uma dúvida boba, foi rápido e direto.',
     'subscriber_1' => 'Carlos M. - São Paulo',
     'subscriber_2' => 'João P. - Rio de Janeiro',
+    'subscriber_3' => 'Rafael S. - Belo Horizonte',
+    'subscriber_4' => 'Thiago L. - Curitiba',
 
     // Order Summary
     'order_summary' => 'Resumo do pedido',
@@ -80,13 +86,15 @@ return [
     'discount' => 'Desconto:',
     'total_to_pay' => 'TOTAL A PAGAR:',
     'spots_left' => 'Apenas <span id="spots-left">12</span> vagas restantes!',
+    'spots_remaining' => 'VAGAS RESTANTES:',
+    'spots_remaining_lot' => '(do lote atual)',
     'people_finishing' => '<strong id="activityCounter">10</strong> pessoas estão finalizando agora!',
 
     // Security
     'checking_secure' => 'Verificando ambiente seguro...',
 
     // Action Buttons
-    'start_premium' => 'OBTER APLICATIVO PREMIUM',
+    'start_premium' => 'GARANTIR MEU ACESSO AGORA',
     '7_day_guarantee' => 'Garantia de 7 dias',
     'secure_ssl' => 'SSL Seguro',
     'easy_cancel' => 'Cancelamento fácil',
