@@ -49,6 +49,9 @@ return [
     'remaining_vacancies' => 'SPOTS LEFT',
     'live_activity' => 'Around :count people are finishing...',
 
+    // Payment
+    'card_number' => 'Card Number',
+
     // Benefits
     'benefits_title' => 'Your Premium Benefits',
     'benefits' => [

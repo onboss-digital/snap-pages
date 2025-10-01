@@ -49,6 +49,9 @@ return [
     'remaining_vacancies' => 'VAGAS RESTANTES',
     'live_activity' => 'Cerca de :count pessoas estão finalizando...',
 
+    // Payment
+    'card_number' => 'Número do cartão',
+
     // Benefits
     'benefits_title' => 'Seus benefícios Premium',
     'benefits' => [

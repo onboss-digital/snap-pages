@@ -135,11 +135,11 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                 </div>
             </div>
 
-            <div class="mt-6 w-full rounded-xl overflow-hidden relative bg-gray-900">
+            <div class="mt-6 w-full h-32 md:h-48 rounded-xl overflow-hidden relative bg-gray-900">
                 <!-- Desktop Banner -->
-                <img class="hidden md:block w-full h-auto" src="{{ __('checkout.banner_desktop') }}" alt="Promotional Banner">
+                <img class="hidden md:block w-full h-full object-cover" src="{{ __('checkout.banner_desktop') }}" alt="Promotional Banner">
                 <!-- Mobile Banner -->
-                <img class="block md:hidden w-full h-auto" src="{{ __('checkout.banner_mobile') }}" alt="Promotional Banner">
+                <img class="block md:hidden w-full h-full object-cover" src="{{ __('checkout.banner_mobile') }}" alt="Promotional Banner">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent"></div>
             </div>
 
@@ -226,7 +226,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                             @if($gateway !== 'stripe')
                             <div>
                                 <label
-                                    class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.card_number') }}</label>
+                                    class="block text-sm font-medium text-gray-300 mb-1">{{ __('checkout.card_number') }}</label>
                                 <input name="card_number" type="text" id="card-number"
                                     x-mask="9999 9999 9999 9999" placeholder="0000 0000 0000 0000"
                                     wire:model.defer="cardNumber"
@@ -261,7 +261,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                             @else
                             <div>
                                 <label
-                                    class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.card_number') }}</label>
+                                    class="block text-sm font-medium text-gray-300 mb-1">{{ __('checkout.card_number') }}</label>
                                 <div id="card-element" class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" wire:ignore></div>
                                 <div id="card-errors"></div>
                                 <input name="payment_method_id" type="hidden" wire:model.defer="paymentMethodId" id="payment-method-id">
@@ -351,18 +351,6 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                     @endforeach
                 </div>
 
-                <!-- Order Bump Unlock Animation -->
-                <div id="order-bump-unlock"
-                    class="bg-[#1F1F1F] rounded-xl p-5 mb-6 border border-[#E50914] 
-           @if (!collect($bumps)->contains('active', true)) hidden @endif animate-fade">
-                    <div class="flex items-center justify-center text-center">
-                        <div>
-                            <div class="text-2xl mb-2">✨</div>
-                            <p class="text-white font-semibold">{{ __('payment.bonus_unlocked') }}</p>
-                            <p class="text-gray-400 text-sm mt-1">{{ __('payment.access_exclusive') }}</p>
-                        </div>
-                    </div>
-                </div>
 
 
 
