@@ -128,21 +128,11 @@ class PagePay extends Component
         $this->selectedLanguage = app()->getLocale();
         $this->calculateTotals();
         $this->activityCount = rand(1, 50);
-
-        if (!empty($this->plans) && isset($this->plans[$this->selectedPlan])) {
-            $this->product = [
-                'hash' => $this->plans[$this->selectedPlan]['hash'], // This hash might be gateway-specific
-                'title' => $this->plans[$this->selectedPlan]['label'],
-                'price_id' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['id'] ?? null,
-            ];
-        } else {
-            // Fallback for product if plans are not loaded
-            $this->product = [
-                'hash' => 'default-product-hash',
-                'title' => 'Default Product',
-                'price_id' => null,
-            ];
-        }
+        $this->product = [
+            'hash' => $this->plans[$this->selectedPlan]['hash'], // This hash might be gateway-specific
+            'title' => $this->plans[$this->selectedPlan]['label'],
+            'price_id' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['id'] ?? null,
+        ];
         // $this->product = [
         //     'hash' => '8v1zcpkn9j', // This hash might be gateway-specific
         //     'title' => 'SNAPHUBB BR',
@@ -171,9 +161,7 @@ class PagePay extends Component
                 $dataResponse = json_decode($responseBody, true);
                 $this->paymentGateway = PaymentGatewayFactory::create();
                 $result = $this->paymentGateway->formatPlans($dataResponse, $this->selectedCurrency);
-                if (isset($result[$this->selectedPlan])) {
-                    $this->bumps = $result[$this->selectedPlan]['order_bumps'];
-                }
+                $this->bumps = $result[$this->selectedPlan]['order_bumps'];
                 return $result;
             })
             ->otherwise(function ($e) {
@@ -226,36 +214,15 @@ class PagePay extends Component
 
     public function calculateTotals()
     {
-        if (empty($this->plans) || !isset($this->plans[$this->selectedPlan])) {
-            $this->totals = [
-                'month_price' => '0,00', 'month_price_discount' => '0,00',
-                'total_price' => '0,00', 'total_discount' => '0,00',
-                'final_price' => '0,00',
-            ];
-            return;
-        }
-
         $plan = $this->plans[$this->selectedPlan];
-
-        if (empty($plan['prices'])) {
-            $this->totals = [
-                'month_price' => '0,00', 'month_price_discount' => '0,00',
-                'total_price' => '0,00', 'total_discount' => '0,00',
-                'final_price' => '0,00',
-            ];
-            return;
-        }
-
         if (!isset($plan['prices'][$this->selectedCurrency])) {
-            reset($plan['prices']);
-            $this->selectedCurrency = key($plan['prices']);
+            $this->selectedCurrency = 'BRL';
         }
-
         $prices = $plan['prices'][$this->selectedCurrency];
 
         $this->totals = [
-            'month_price' => $prices['origin_price'] / $plan['number_months'],
-            'month_price_discount' => $prices['descont_price'] / $plan['number_months'],
+            'month_price' => $prices['origin_price'] / $plan['nunber_months'],
+            'month_price_discount' => $prices['descont_price'] / $plan['nunber_months'],
             'total_price' => $prices['origin_price'],
             'total_discount' => $prices['origin_price'] - $prices['descont_price'],
         ];
@@ -307,14 +274,14 @@ class PagePay extends Component
 
                         $offerValue = round(
                             $this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price']
-                                / $this->plans['semi-annual']['number_months'],
+                                / $this->plans['semi-annual']['nunber_months'],
                             1
                         );
 
                         $offerDiscont = (
                             $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price']
-                            * $this->plans['semi-annual']['number_months']
-                        ) - ($offerValue * $this->plans['semi-annual']['number_months']);
+                            * $this->plans['semi-annual']['nunber_months']
+                        ) - ($offerValue * $this->plans['semi-annual']['nunber_months']);
 
                         $this->modalData = [
                             'actual_month_value'    => $this->totals['month_price_discount'],
@@ -353,10 +320,10 @@ class PagePay extends Component
         $this->showUpsellModal = false;
         // Logic for downsell offer (quarterly)
         if ($this->selectedPlan === 'monthly') { // Only show downsell if current plan is monthly
-            $offerValue = round($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['quarterly']['number_months'], 1);
+            $offerValue = round($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['quarterly']['nunber_months'], 1);
             // Corrected discount calculation for downsell
             $basePriceForDiscountCalc = $this->plans['monthly']['prices'][$this->selectedCurrency]['origin_price']; // Price of the plan they *were* on
-            $offerDiscont = ($basePriceForDiscountCalc * $this->plans['quarterly']['number_months']) - ($offerValue * $this->plans['quarterly']['number_months']);
+            $offerDiscont = ($basePriceForDiscountCalc * $this->plans['quarterly']['nunber_months']) - ($offerValue * $this->plans['quarterly']['nunber_months']);
 
             $this->modalData = [
                 'actual_month_value' => $this->totals['month_price_discount'], // This should be from the current 'monthly' plan
@@ -403,8 +370,8 @@ class PagePay extends Component
                 $redirectUrl = $response['data']['redirect_url'];
                 $upsell_productId = $response['data']['upsell_productId'];
                 if (!empty($redirectUrl)) {
-                 return redirect()->to($redirectUrl . "?customerId=" . $customerId . "&upsell_productId=" . $upsell_productId. "&currency=" . strtoupper($this->selectedCurrency));
-				} else {
+                return redirect()->to($redirectUrl . "?customerId=" . $customerId . "&upsell_productId=" . $upsell_productId. "&currency=" . strtoupper($this->selectedCurrency));
+                } else {
                     return;
                 }
             }

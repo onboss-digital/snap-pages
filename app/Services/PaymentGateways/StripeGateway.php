@@ -350,7 +350,7 @@ class StripeGateway implements PaymentGatewayInterface
             $result[$key] = [
                 'hash'          => $plan['pages_product_external_id'],
                 'label'         => ucfirst($plan['name']) . " - {$plan['duration_value']}/{$plan['duration']}",
-                'number_months' => $plan['duration_value'],
+                'nunber_months' => $plan['duration_value'],
                 'prices'        => $prices,
                 'upsell_url' => $plan['pages_upsell_url'],
                 'order_bumps'   => $bumps,

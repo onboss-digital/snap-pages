@@ -137,7 +137,8 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 
             <div class="mt-6 w-full h-32 md:h-48 rounded-xl overflow-hidden relative bg-gray-900">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent">
-                    <img class="w-full h-full object-cover" src="{{ __('payment.banner_url') }}" alt="streamit banner">
+                    <img class="img logo" src="{{ asset('imgs/banner brasil.jpg') }}" alt="streamit">
+
                 </div>
             </div>
 
@@ -284,7 +285,6 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                                 <input name="email" type="text" placeholder="{{ __('payment.email') }}"
                                     wire:model="email"
                                     class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
-                                <p class="text-xs text-gray-400 mt-1">{{ __('payment.email_helper') }}</p>
                                 @error('email')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                 @enderror
@@ -368,29 +368,71 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                 <!-- Testimonials -->
                 <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
                     <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.subscribers_say') }}</h2>
+
                     <div class="space-y-4">
-                        @for ($i = 1; $i <= 4; $i++)
-                            @if(__('payment.testimonial_' . $i) != 'payment.testimonial_' . $i)
-                            <div class="bg-[#2D2D2D] p-4 rounded-lg flex items-start space-x-4">
-                                <img src="https://i.pravatar.cc/150?u=subscriber{{$i}}" alt="Avatar" class="w-12 h-12 rounded-full">
-                                <div>
-                                    <div class="flex items-center mb-1">
-                                        <div class="flex text-yellow-400">
-                                            @for ($j = 0; $j < 5; $j++)
-                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                                                </svg>
-                                            @endfor
-                                        </div>
-                                    </div>
-                                    <p class="text-white text-sm">"{{ __('payment.testimonial_' . $i) }}"</p>
-                                    <div class="mt-3 text-sm font-medium text-gray-400">
-                                        - {{ __('payment.subscriber_' . $i) }}
-                                    </div>
+                        <div class="bg-[#2D2D2D] p-4 rounded-lg">
+                            <div class="flex items-center mb-2">
+                                <div class="flex text-yellow-400">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                        </path>
+                                    </svg>
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                        </path>
+                                    </svg>
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                        </path>
+                                    </svg>
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                        </path>
+                                    </svg>
                                 </div>
+                                <span class="ml-2 text-sm text-gray-400">{{ __('payment.days_ago') }}</span>
                             </div>
-                            @endif
-                        @endfor
+                            <p class="text-white text-sm">{{ __('payment.testimonial_1') }}</p>
+                            <div class="mt-3 text-sm font-medium text-gray-400">
+                                {{ __('payment.subscriber_1') }}
+                            </div>
+                        </div>
+
+                        <div class="bg-[#2D2D2D] p-4 rounded-lg">
+                            <div class="flex items-center mb-2">
+                                <div class="flex text-yellow-400">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                        </path>
+                                    </svg>
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                        </path>
+                                    </svg>
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                        </path>
+                                    </svg>
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <span class="ml-2 text-sm text-gray-400">{{ __('payment.days_ago') }}</span>
+                            </div>
+                            <p class="text-white text-sm">{{ __('payment.testimonial_2') }}</p>
+                            <div class="mt-3 text-sm font-medium text-gray-400">
+                                {{ __('payment.subscriber_2') }}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -402,11 +444,14 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                     <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.order_summary') }}</h2>
 
                     <!-- Timer -->
-                    <div class="text-center mb-4">
-                        <span class="text-2xl font-bold text-red-600 animate-pulse">
-                            🕐 {{ __('payment.offer_expires') }}
-                            <span id="countdown-timer">{{ sprintf('%02d:%02d', $countdownMinutes, $countdownSeconds) }}</span>
-                        </span>
+                    <div class="bg-[#2D2D2D] rounded-lg p-3 mb-4 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-[#E50914] mr-2" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-white">{{ __('payment.offer_expires') }} <span id="countdown-timer"
+                                class="font-bold">{{ sprintf('%02d:%02d', $countdownMinutes, $countdownSeconds) }}</span></span>
                     </div>
 
                     <!-- Plan selection -->
@@ -488,8 +533,8 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 
             <!-- Limited spots -->
             <div class="bg-[#2D2D2D] rounded-lg p-3 mb-4 text-center">
-                <span class="font-medium">{{ __('payment.spots_remaining') }} <strong><span
-                            id="spots-left">{{ $spotsLeft }}</span> {{ __('payment.spots_remaining_lot') }}</strong></span>
+                <span class="font-medium">VAGAS RESTANTES: <strong><span
+                            id="spots-left">{{ $spotsLeft }}</span> (do lote atual)</strong></span>
             </div>
 
             <!-- Live Activity Indicator -->
@@ -510,7 +555,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
             </div>
 
             <button id="checkout-button" type="button" wire:click.prevent="startCheckout"
-                class="w-full bg-[#E50914] hover:bg-[#B8070F] text-white py-3 text-lg font-bold rounded-xl transition-all block cursor-pointer transform hover:scale-105">
+                class="w-full bg-[#E50914] hover:bg-[#B8070F] text-white py-3 text-lg font-bold rounded-xl transition-all block cursor-pointer">
                 {{ __('payment.start_premium') }}
             </button>
 
@@ -758,39 +803,12 @@ $gateway = config('services.default_payment_gateway', 'stripe');
     <p class="text-sm mt-2 text-gray-400">{{ __('payment.optimizing') }}</p>
 </div>
 <!-- Stripe JS -->
-@push('scripts')
-<script>
-    document.addEventListener('livewire:load', function () {
-        const checkoutButton = document.getElementById('checkout-button');
-        const stickyCheckoutButton = document.getElementById('sticky-checkout-button');
-
-        const handleCheckoutClick = () => {
-            setTimeout(() => {
-                const firstError = document.querySelector('.text-red-500');
-                if (firstError) {
-                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 500);
-        };
-
-        if(checkoutButton) {
-            checkoutButton.addEventListener('click', handleCheckoutClick);
-        }
-        if(stickyCheckoutButton) {
-            stickyCheckoutButton.addEventListener('click', handleCheckoutClick);
-        }
-    });
-
-    window.addEventListener('redirectToExternal', event => {
-        window.location.href = event.detail.url;
-    });
-</script>
-
 @if($gateway === 'stripe')
+@push('scripts')
 <script src="https://js.stripe.com/v3/"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        var stripe = Stripe("{{ config('services.stripe.api_public_key') }}");
+        var stripe = Stripe("{{ config('services.stripe.api_public_key') }}"); // sua chave de teste
         var elements = stripe.elements();
         var style = {
             base: {
@@ -819,10 +837,16 @@ $gateway = config('services.default_payment_gateway', 'stripe');
         card.addEventListener('change', async function(event) {
             document.getElementById('card-errors').textContent = event.error ? event.error.message : '';
             if (event.complete) {
-                const { error, paymentMethod } = await stripe.createPaymentMethod({
+                console.log('complete');
+                const {
+                    error,
+                    paymentMethod
+                } = await stripe.createPaymentMethod({
                     type: 'card',
                     card: card,
-                    billing_details: { name: 'João da Silva' }
+                    billing_details: {
+                        name: 'João da Silva',
+                    }
                 });
 
                 if (error) {
@@ -830,11 +854,18 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                     return;
                 }
                 const component = Livewire.find(document.querySelector('[wire\\:id]').getAttribute('wire:id'));
+                // Atualiza o property
                 component.set('paymentMethodId', paymentMethod.id);
             }
         });
     });
+
+
+    window.addEventListener('redirectToExternal', event => {
+        console.log(event);
+        window.location.href = event.detail.url;
+    });
 </script>
-@endif
 @endpush
+@endif
 </div>

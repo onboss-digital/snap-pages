@@ -79,6 +79,7 @@ class For4PaymentGateway implements PaymentGatewayInterface
             return $this->handleResponse($dataResponse, $res->getStatusCode());
 
         } catch (\Exception $e) {
+            dd($e->getMessage());
             Log::channel('payment_checkout')->error('For4PaymentGateway: API Error (placeholder).', [
                 'message' => $e->getMessage(),
                 'request_data' => $loggedData,
@@ -121,11 +122,5 @@ class For4PaymentGateway implements PaymentGatewayInterface
                 'original_response' => $responseData
             ];
         }
-    }
-
-    public function formatPlans(mixed $data, string $selectedCurrency): array
-    {
-        // Placeholder implementation to satisfy the interface.
-        return [];
     }
 }
