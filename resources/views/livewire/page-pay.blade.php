@@ -135,11 +135,10 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                 </div>
             </div>
 
-            <div class="mt-6 w-full h-32 md:h-48 rounded-xl overflow-hidden relative bg-gray-900">
-                <!-- Desktop Banner -->
-                <img class="hidden md:block w-full h-full object-cover" src="{{ __('checkout.banner_desktop') }}" alt="Promotional Banner">
-                <!-- Mobile Banner -->
-                <img class="block md:hidden w-full h-full object-cover" src="{{ __('checkout.banner_mobile') }}" alt="Promotional Banner">
+            <div class="mt-6 w-full rounded-xl overflow-hidden relative bg-gray-900 aspect-[9/16] md:aspect-[21/9]">
+                <!-- Banners -->
+                <img class="absolute inset-0 w-full h-full object-cover hidden md:block" src="{{ __('checkout.banner_desktop') }}" alt="Promotional Banner">
+                <img class="absolute inset-0 w-full h-full object-cover block md:hidden" src="{{ __('checkout.banner_mobile') }}" alt="Promotional Banner">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent"></div>
             </div>
 
@@ -355,7 +354,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 
 
                 <!-- Testimonials -->
-                <div class="bg-transparent rounded-xl mb-6">
+                <div class="bg-transparent rounded-xl">
                     <h2 class="text-2xl font-bold text-white mb-6 text-center">{{ __('checkout.testimonials_title') }}</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         @if(is_array($testimonials) && !empty($testimonials))
@@ -753,12 +752,15 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 <script>
     document.addEventListener('livewire:init', () => {
         Livewire.on('validation:failed', () => {
+            console.log('Validation failed: Scrolling to payment section.');
             const paymentSection = document.getElementById('payment-method-section');
             if (paymentSection) {
                 paymentSection.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
                 });
+            } else {
+                console.error('Payment section with ID "payment-method-section" not found.');
             }
         });
     });

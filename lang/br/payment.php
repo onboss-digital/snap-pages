@@ -33,7 +33,6 @@ return [
     'payment_method' => 'Método de pagamento',
     'pix' => 'PIX',
     'card' => 'Cartão',
-    'card_number' => 'Número do cartão',
     'expiry_date' => 'Data de expiração',
     'security_code' => 'Código de segurança',
     'card_name' => 'Nome no cartão',
