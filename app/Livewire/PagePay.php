@@ -65,14 +65,6 @@ class PagePay extends Component
     public $spotsLeft = 12;
     public $activityCount = 0;
     public $totals = [];
-    public $benefits = [
-        ['title' => 'Vídeos premium', 'description' => 'Acesso a todo nosso conteúdo sem restrições'],
-        ['title' => 'Conteúdos diários', 'description' => 'Novas atualizações todos os dias'],
-        ['title' => 'Sem anúncios', 'description' => 'Experiência limpa e sem interrupções'],
-        ['title' => 'Personalização', 'description' => 'Configure sua conta como preferir'],
-        ['title' => 'Atualizações semanais', 'description' => 'Novas funcionalidades toda semana'],
-        ['title' => 'Votação e sugestões', 'description' => 'Ajude a moldar o futuro da plataforma']
-    ];
 
     private PaymentGatewayInterface $paymentGateway; // Added
 
@@ -300,7 +292,7 @@ class PagePay extends Component
         }
 
         try {
-            $this->gateway === "stripe" ? null : $this->validate();
+            $this->validate();
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->dispatch('validation:failed');
             throw $e;

@@ -47,4 +47,22 @@ return [
 
     // Scarcity
     'remaining_vacancies' => 'VAGAS RESTANTES',
+    'live_activity' => 'Cerca de :count pessoas estão finalizando...',
+
+    // Benefits
+    'benefits_title' => 'Seus benefícios Premium',
+    'benefits' => [
+        'premium_videos' => 'Vídeos premium',
+        'premium_videos_desc' => 'Acesso a todo nosso conteúdo sem restrições',
+        'daily_content' => 'Conteúdos diários',
+        'daily_content_desc' => 'Novas atualizações todos os dias',
+        'no_ads' => 'Sem anúncios',
+        'no_ads_desc' => 'Experiência limpa e sem interrupções',
+        'personalization' => 'Personalização',
+        'personalization_desc' => 'Configure sua conta como preferir',
+        'weekly_updates' => 'Atualizações semanais',
+        'weekly_updates_desc' => 'Novas funcionalidades toda semana',
+        'voting' => 'Votação e sugestões',
+        'voting_desc' => 'Ajude a moldar o futuro da plataforma',
+    ],
 ];

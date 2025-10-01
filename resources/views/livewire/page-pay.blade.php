@@ -179,25 +179,23 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 
                 <!-- Benefits -->
                 <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
-                    <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.premium_benefits') }}</h2>
-
+                    <h2 class="text-xl font-semibold text-white mb-4">{{ __('checkout.benefits_title') }}</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="benefits-container">
-
-                        @foreach ($benefits as $benefit)
-                        <div class="flex items-start space-x-3">
-                            <div class="p-2 bg-[#E50914] rounded-lg">
-                                <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
+                        @foreach (__('checkout.benefits') as $key => $description)
+                            @if (str_ends_with($key, '_desc')) @continue @endif
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 bg-[#E50914] rounded-lg">
+                                    <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-medium text-white">{{ $description }}</h3>
+                                    <p class="text-sm text-gray-400">{{ __('checkout.benefits.' . $key . '_desc') }}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="font-medium text-white">{{ $benefit['title'] }}</h3>
-                                <p class="text-sm text-gray-400">{{ $benefit['description'] }}</p>
-                            </div>
-                        </div>
                         @endforeach
-
                     </div>
                 </div>
 
@@ -295,7 +293,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                                 <label
                                     class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.phone') }}</label>
                                 <input name="phone" type="text" id="phone"
-                                    placeholder="(00) 00000-0000" x-mask="(99) 99999-9999"
+                                    placeholder="+1 (555) 123-4567"
                                     wire:model.defer="phone"
                                     class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
                                 <p class="text-xs text-gray-400 mt-1 pl-1">{{ __('checkout.phone_helper') }}</p>
@@ -369,24 +367,29 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 
 
                 <!-- Testimonials -->
-                <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
-                    <h2 class="text-xl font-semibold text-white mb-6 text-center">{{ __('checkout.testimonials_title') }}</h2>
+                <div class="bg-transparent rounded-xl mb-6">
+                    <h2 class="text-2xl font-bold text-white mb-6 text-center">{{ __('checkout.testimonials_title') }}</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         @if(is_array($testimonials) && !empty($testimonials))
                             @foreach (array_slice($testimonials, 0, 4) as $testimonial)
-                                <div class="bg-[#2D2D2D] p-5 rounded-lg flex flex-col h-full">
-                                    <div class="flex items-center mb-4">
-                                        <img src="https://ui-avatars.com/api/?name={{ substr($testimonial['name'], 0, 1) }}&color=FFFFFF&background=dc2626&bold=true" alt="Avatar" class="w-12 h-12 rounded-full mr-4">
-                                        <div>
-                                            <p class="font-semibold text-white">{{ $testimonial['name'] }}</p>
-                                            <div class="flex text-yellow-400 mt-1">
-                                                @for ($i = 0; $i < 5; $i++)
-                                                    <svg class="w-5 h-5" fill="{{ $i < $testimonial['stars'] ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.519 4.674c.3.921-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.519-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
-                                                @endfor
+                                <div class="bg-gray-800 bg-opacity-50 p-6 rounded-xl border border-gray-700 shadow-lg flex flex-col h-full transform transition-transform hover:scale-105">
+                                    <div class="flex-shrink-0">
+                                        <div class="flex items-center mb-4">
+                                            <img src="https://ui-avatars.com/api/?name={{ substr($testimonial['name'], 0, 1) }}&color=FFFFFF&background=E50914&bold=true&size=48" alt="Avatar" class="w-12 h-12 rounded-full mr-4 border-2 border-red-500">
+                                            <div>
+                                                <p class="font-bold text-white text-lg">{{ $testimonial['name'] }}</p>
+                                                <div class="flex text-yellow-400 mt-1">
+                                                    @for ($i = 0; $i < 5; $i++)
+                                                        <svg class="w-5 h-5" fill="{{ $i < $testimonial['stars'] ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.519 4.674c.3.921-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.519-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+                                                    @endfor
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <p class="text-gray-300 text-sm flex-grow">"{{ $testimonial['quote'] }}"</p>
+                                    <div class="relative flex-grow">
+                                        <svg class="absolute top-0 left-0 w-8 h-8 text-gray-600 transform -translate-x-2 -translate-y-2" fill="currentColor" viewBox="0 0 24 24"><path d="M6.5 10c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5zm11 0c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5zM20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 14c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" opacity=".2"/></svg>
+                                        <p class="text-gray-300 text-base italic pl-4 border-l-4 border-red-500">"{{ $testimonial['quote'] }}"</p>
+                                    </div>
                                 </div>
                             @endforeach
                         @endif
@@ -496,9 +499,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 
             <!-- Live Activity Indicator -->
             <div class="bg-[#2D2D2D] rounded-lg p-3 mb-6 text-center">
-                <span class="text-gray-400">Cerca de <strong id="activityCounter"
-                        class="text-white">{{ $activityCount }}</strong> pessoas estão
-                    finalizando...</span>
+                <span class="text-gray-400">{!! __('checkout.live_activity', ['count' => '<strong id="activityCounter" class="text-white">'.$activityCount.'</strong>']) !!}</span>
             </div>
 
             <!-- Verificação de Ambiente Seguro -->
@@ -512,7 +513,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
             </div>
 
             <button id="checkout-button" type="button" wire:click.prevent="startCheckout"
-                class="w-full bg-[#DC2626] hover:bg-red-700 text-white py-4 text-lg font-bold rounded-xl transition-all block cursor-pointer transform hover:scale-105">
+                class="w-full bg-[#E50914] hover:bg-[#B8070F] text-white py-3 text-lg font-bold rounded-xl transition-all block cursor-pointer transform hover:scale-105">
                 {{ __('checkout.cta_button') }}
             </button>
 
