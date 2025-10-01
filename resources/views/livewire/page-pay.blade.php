@@ -135,17 +135,18 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                 </div>
             </div>
 
-            <div class="mt-6 w-full h-32 md:h-48 rounded-xl overflow-hidden relative bg-gray-900">
-                <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent">
-                    <img class="img logo" src="{{ asset('imgs/banner brasil.jpg') }}" alt="streamit">
-
-                </div>
+            <div class="mt-6 w-full rounded-xl overflow-hidden relative bg-gray-900">
+                <!-- Desktop Banner -->
+                <img class="hidden md:block w-full h-auto" src="{{ __('checkout.banner_desktop') }}" alt="Promotional Banner">
+                <!-- Mobile Banner -->
+                <img class="block md:hidden w-full h-auto" src="{{ __('checkout.banner_mobile') }}" alt="Promotional Banner">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent"></div>
             </div>
 
-            <h1 class="text-3xl md:text-4xl font-bold text-white mt-6 text-center md:text-left">
-                {{ __('payment.start_subscription') }}
+            <h1 class="text-3xl md:text-4xl font-bold text-white mt-6 text-center">
+                {{ __('checkout.main_title') }}
             </h1>
-            <p class="text-lg text-gray-300 mt-2 text-center md:text-left">{{ __('payment.unlock_access') }}</p>
+            <p class="text-lg text-gray-300 mt-2 text-center">{{ __('checkout.subtitle') }}</p>
         </header>
         <form accept="" method="POST" id="payment-form">
             @csrf
@@ -285,6 +286,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                                 <input name="email" type="text" placeholder="{{ __('payment.email') }}"
                                     wire:model="email"
                                     class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                <p class="text-xs text-gray-400 mt-1 pl-1">{{ __('checkout.email_helper') }}</p>
                                 @error('email')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                 @enderror
@@ -296,6 +298,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                                     placeholder="(00) 00000-0000" x-mask="(99) 99999-9999"
                                     wire:model.defer="phone"
                                     class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                <p class="text-xs text-gray-400 mt-1 pl-1">{{ __('checkout.phone_helper') }}</p>
                                 @error('phone')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                 @enderror
@@ -367,72 +370,26 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 
                 <!-- Testimonials -->
                 <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
-                    <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.subscribers_say') }}</h2>
-
-                    <div class="space-y-4">
-                        <div class="bg-[#2D2D2D] p-4 rounded-lg">
-                            <div class="flex items-center mb-2">
-                                <div class="flex text-yellow-400">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                        </path>
-                                    </svg>
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                        </path>
-                                    </svg>
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                        </path>
-                                    </svg>
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                        </path>
-                                    </svg>
+                    <h2 class="text-xl font-semibold text-white mb-6 text-center">{{ __('checkout.testimonials_title') }}</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        @if(is_array($testimonials) && !empty($testimonials))
+                            @foreach (array_slice($testimonials, 0, 4) as $testimonial)
+                                <div class="bg-[#2D2D2D] p-5 rounded-lg flex flex-col h-full">
+                                    <div class="flex items-center mb-4">
+                                        <img src="https://ui-avatars.com/api/?name={{ substr($testimonial['name'], 0, 1) }}&color=FFFFFF&background=dc2626&bold=true" alt="Avatar" class="w-12 h-12 rounded-full mr-4">
+                                        <div>
+                                            <p class="font-semibold text-white">{{ $testimonial['name'] }}</p>
+                                            <div class="flex text-yellow-400 mt-1">
+                                                @for ($i = 0; $i < 5; $i++)
+                                                    <svg class="w-5 h-5" fill="{{ $i < $testimonial['stars'] ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.519 4.674c.3.921-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.519-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+                                                @endfor
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-300 text-sm flex-grow">"{{ $testimonial['quote'] }}"</p>
                                 </div>
-                                <span class="ml-2 text-sm text-gray-400">{{ __('payment.days_ago') }}</span>
-                            </div>
-                            <p class="text-white text-sm">{{ __('payment.testimonial_1') }}</p>
-                            <div class="mt-3 text-sm font-medium text-gray-400">
-                                {{ __('payment.subscriber_1') }}
-                            </div>
-                        </div>
-
-                        <div class="bg-[#2D2D2D] p-4 rounded-lg">
-                            <div class="flex items-center mb-2">
-                                <div class="flex text-yellow-400">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                        </path>
-                                    </svg>
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                        </path>
-                                    </svg>
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                        </path>
-                                    </svg>
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                        </path>
-                                    </svg>
-                                </div>
-                                <span class="ml-2 text-sm text-gray-400">{{ __('payment.days_ago') }}</span>
-                            </div>
-                            <p class="text-white text-sm">{{ __('payment.testimonial_2') }}</p>
-                            <div class="mt-3 text-sm font-medium text-gray-400">
-                                {{ __('payment.subscriber_2') }}
-                            </div>
-                        </div>
+                            @endforeach
+                        @endif
                     </div>
                 </div>
             </div>
@@ -441,17 +398,17 @@ $gateway = config('services.default_payment_gateway', 'stripe');
             <div class="md:col-span-1">
                 <div class="bg-[#1F1F1F] rounded-xl p-6 sticky top-6" wire:poll.1s="decrementTimer"
                     wire:poll.15000ms="decrementSpotsLeft" wire:poll.8000ms="updateLiveActivity">
-                    <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.order_summary') }}</h2>
+                    <h2 class="text-xl font-semibold text-white mb-4 text-center">{{ __('checkout.order_summary_title') }}</h2>
 
                     <!-- Timer -->
-                    <div class="bg-[#2D2D2D] rounded-lg p-3 mb-4 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-[#E50914] mr-2" fill="none" viewBox="0 0 24 24"
+                    <div class="bg-gray-800 border border-red-600 rounded-lg p-3 mb-6 flex items-center justify-center animate-pulse">
+                        <svg class="w-6 h-6 text-red-600 mr-2" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span class="text-white">{{ __('payment.offer_expires') }} <span id="countdown-timer"
-                                class="font-bold">{{ sprintf('%02d:%02d', $countdownMinutes, $countdownSeconds) }}</span></span>
+                        <span class="text-white font-medium">{{ __('checkout.offer_expires_in') }} <span id="countdown-timer"
+                                class="font-bold text-red-500 tracking-wider">{{ sprintf('%02d:%02d', $countdownMinutes, $countdownSeconds) }}</span></span>
                     </div>
 
                     <!-- Plan selection -->
@@ -533,8 +490,8 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 
             <!-- Limited spots -->
             <div class="bg-[#2D2D2D] rounded-lg p-3 mb-4 text-center">
-                <span class="font-medium">VAGAS RESTANTES: <strong><span
-                            id="spots-left">{{ $spotsLeft }}</span> (do lote atual)</strong></span>
+                <span class="font-medium">{{ __('checkout.remaining_vacancies') }}: <strong><span
+                            id="spots-left">{{ $spotsLeft }}</span></strong></span>
             </div>
 
             <!-- Live Activity Indicator -->
@@ -555,8 +512,8 @@ $gateway = config('services.default_payment_gateway', 'stripe');
             </div>
 
             <button id="checkout-button" type="button" wire:click.prevent="startCheckout"
-                class="w-full bg-[#E50914] hover:bg-[#B8070F] text-white py-3 text-lg font-bold rounded-xl transition-all block cursor-pointer">
-                {{ __('payment.start_premium') }}
+                class="w-full bg-[#DC2626] hover:bg-red-700 text-white py-4 text-lg font-bold rounded-xl transition-all block cursor-pointer transform hover:scale-105">
+                {{ __('checkout.cta_button') }}
             </button>
 
             <!-- Trust badges -->
@@ -604,7 +561,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
         <button type="button" id="sticky-checkout-button"
             wire:click.prevent="startCheckout"
             class="bg-[#E50914] hover:bg-[#B8070F] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center cursor-pointer">
-            <span class="truncate">{{ __('payment.start_premium') }}</span>
+            <span class="truncate">{{ __('checkout.cta_button') }}</span>
         </button>
     </div>
 </div>
@@ -803,8 +760,20 @@ $gateway = config('services.default_payment_gateway', 'stripe');
     <p class="text-sm mt-2 text-gray-400">{{ __('payment.optimizing') }}</p>
 </div>
 <!-- Stripe JS -->
-@if($gateway === 'stripe')
 @push('scripts')
+<script>
+    document.addEventListener('livewire:init', () => {
+        Livewire.on('validation:failed', () => {
+            const firstError = document.querySelector('[aria-invalid="true"]');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstError.focus();
+            }
+        });
+    });
+</script>
+
+@if($gateway === 'stripe')
 <script src="https://js.stripe.com/v3/"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -866,6 +835,6 @@ $gateway = config('services.default_payment_gateway', 'stripe');
         window.location.href = event.detail.url;
     });
 </script>
-@endpush
 @endif
+@endpush
 </div>

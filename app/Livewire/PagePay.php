@@ -14,7 +14,7 @@ class PagePay extends Component
 {
 
     public $paymentMethodId, $cardName, $cardNumber, $cardExpiry, $cardCvv, $email, $phone, $cpf,
-        $plans, $modalData, $product;
+        $plans, $modalData, $product, $testimonials = [];
 
     // Modais
     public $showSuccessModal = false;
@@ -96,7 +96,7 @@ class PagePay extends Component
             'cardExpiry' => ['required', 'string', 'regex:/^(0[1-9]|1[0-2])\/?([0-9]{2})$/'],
             'cardCvv' => 'required|numeric|digits_between:3,4',
             'email' => 'required|email',
-            'phone' => ['required', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
+            'phone' => ['nullable', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
         ];
         if ($this->selectedCurrency === 'BRL') {
             $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
@@ -122,10 +122,18 @@ class PagePay extends Component
             $this->debug();
         }
 
+        if (!Session::has('locale_detected')) {
+            $this->detectLanguage();
+            Session::put('locale_detected', true);
+        } else {
+            $this->selectedLanguage = session('locale', 'br');
+            app()->setLocale($this->selectedLanguage);
+        }
+
+        $this->testimonials = trans('checkout.testimonials');
         $this->plans = $this->getPlans();
         $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
         $this->selectedPlan = Session::get('selectedPlan', 'monthly');
-        $this->selectedLanguage = app()->getLocale();
         $this->calculateTotals();
         $this->activityCount = rand(1, 50);
         $this->product = [
@@ -133,14 +141,6 @@ class PagePay extends Component
             'title' => $this->plans[$this->selectedPlan]['label'],
             'price_id' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['id'] ?? null,
         ];
-        // $this->product = [
-        //     'hash' => '8v1zcpkn9j', // This hash might be gateway-specific
-        //     'title' => 'SNAPHUBB BR',
-        //     'cover' => 'https://d2lr0gp42cdhn1.cloudfront.net/3564404929/products/ua11qf25qootxsznxicnfdbrd',
-        //     'product_type' => 'digital',
-        //     'guaranted_days' => 7,
-        //     'sale_page' => 'https://snaphubb.online',
-        // ];
     }
 
     public function getPlans()
@@ -283,23 +283,30 @@ class PagePay extends Component
 
     public function startCheckout()
     {
+        if ($this->cardNumber) {
+            $this->cardNumber = preg_replace('/\D/', '', $this->cardNumber);
+        }
+        if ($this->cardCvv) {
+            $this->cardCvv = preg_replace('/\D/', '', $this->cardCvv);
+        }
+        if ($this->phone) {
+            $this->phone = preg_replace('/[^0-9+]/', '', $this->phone);
+        }
+        if ($this->cpf && $this->selectedCurrency === 'BRL') {
+            $cpf = preg_replace('/\D/', '', $this->cpf);
+            if (strlen($cpf) == 11) {
+                $this->cpf = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
+            }
+        }
+
         try {
-            if ($this->cardNumber) {
-                $this->cardNumber = preg_replace('/\D/', '', $this->cardNumber);
-            }
-            if ($this->cardCvv) {
-                $this->cardCvv = preg_replace('/\D/', '', $this->cardCvv);
-            }
-            if ($this->phone) {
-                $this->phone = preg_replace('/[^0-9+]/', '', $this->phone);
-            }
-            if ($this->cpf && $this->selectedCurrency === 'BRL') {
-                $cpf = preg_replace('/\D/', '', $this->cpf);
-                if (strlen($cpf) == 11) {
-                    $this->cpf = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
-                }
-            }
-            $this->gateway === "stripe" ? null :  $this->validate();
+            $this->gateway === "stripe" ? null : $this->validate();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->dispatch('validation:failed');
+            throw $e;
+        }
+
+        try {
             $this->showSecure = true;
             $this->showLodingModal = true; // Assuming "Loding" is intended
 
@@ -567,6 +574,7 @@ class PagePay extends Component
                     : ($lang === 'es' ? 'EUR' : 'BRL'));
             // Recalculate plans and totals as language might affect labels (though prices should be language-agnostic)
             $this->plans = $this->getPlans(); // Re-fetch plans to update labels
+            $this->testimonials = trans('checkout.testimonials');
             $this->calculateTotals();
             // Dispatch an event if JS needs to react to language change for UI elements not covered by Livewire re-render
             $this->dispatch('languageChanged');
@@ -587,6 +595,21 @@ class PagePay extends Component
     {
         $this->activityCount = rand(3, 25);
         $this->dispatch('activity-updated');
+    }
+
+    private function detectLanguage()
+    {
+        $preferredLanguage = request()->getPreferredLanguage(array_keys($this->availableLanguages));
+
+        if (str_starts_with($preferredLanguage, 'pt')) {
+            $this->selectedLanguage = 'br';
+        } elseif (str_starts_with($preferredLanguage, 'es')) {
+            $this->selectedLanguage = 'es';
+        } else {
+            $this->selectedLanguage = 'en';
+        }
+
+        $this->changeLanguage($this->selectedLanguage);
     }
 
     public function render()
