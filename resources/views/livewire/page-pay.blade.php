@@ -319,6 +319,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                 </div>
 
                 <!-- Order Bumps -->
+                @if(!empty($bumps))
                 <div class="bg-[#1F1F1F] rounded-xl p-5 border border-gray-700">
                     @foreach ($bumps as $index => $bump)
                     <div class="flex items-start mb-4 last:mb-0">
@@ -326,8 +327,8 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                             <input
                                 id="order-bump-{{ $bump['id'] }}"
                                 type="checkbox"
-                                class="w-5 h-5 text-[#E50914] bg-[#2D2D2D] border-gray-600 rounded 
-                           focus:ring-[#E50914] focus:ring-opacity-25 focus:ring-2 
+                                class="w-5 h-5 text-[#E50914] bg-[#2D2D2D] border-gray-600 rounded
+                           focus:ring-[#E50914] focus:ring-opacity-25 focus:ring-2
                            focus:border-[#E50914] cursor-pointer"
                                 wire:model="bumps.{{ $index }}.active"
                                 wire:change="calculateTotals" />
@@ -349,6 +350,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                     </div>
                     @endforeach
                 </div>
+                @endif
 
 
 
