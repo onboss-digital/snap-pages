@@ -91,7 +91,7 @@ class PagePay extends Component
             'email' => 'required|email',
             'phone' => ['nullable', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
         ];
-        if ($this->selectedCurrency === 'BRL') {
+        if ($this->selectedLanguage === 'br') {
             $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
         }
         return $rules;
@@ -292,7 +292,7 @@ class PagePay extends Component
         if ($this->phone) {
             $this->phone = preg_replace('/[^0-9+]/', '', $this->phone);
         }
-        if ($this->cpf && $this->selectedCurrency === 'BRL') {
+        if ($this->cpf && $this->selectedLanguage === 'br') {
             $cpf = preg_replace('/\D/', '', $this->cpf);
             if (strlen($cpf) == 11) {
                 $this->cpf = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
@@ -306,7 +306,7 @@ class PagePay extends Component
                 'email' => 'required|email',
             ];
 
-            if ($this->selectedCurrency === 'BRL') {
+            if ($this->selectedLanguage === 'br') {
                 $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
             }
 
@@ -506,7 +506,7 @@ class PagePay extends Component
             'email' => $this->email,
             'phone_number' => preg_replace('/[^0-9+]/', '', $this->phone),
         ];
-        if ($this->selectedCurrency === 'BRL' && $this->cpf) {
+        if ($this->selectedLanguage === 'br' && $this->cpf) {
             $customerData['document'] = preg_replace('/\D/', '', $this->cpf);
         }
 
@@ -517,7 +517,7 @@ class PagePay extends Component
             'exp_year' => $expYear,
             'cvv' => $this->cardCvv,
         ];
-        if ($this->selectedCurrency === 'BRL' && $this->cpf) {
+        if ($this->selectedLanguage === 'br' && $this->cpf) {
             $cardDetails['document'] = preg_replace('/\D/', '', $this->cpf);
         }
 

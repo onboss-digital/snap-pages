@@ -304,8 +304,8 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                                 @enderror
                             </div>
 
-                            <!-- CPF Field - Only visible for Brazilian currency -->
-                            @if($selectedCurrency === 'BRL')
+                            <!-- CPF Field - Only visible for Brazilian Portuguese -->
+                            @if($selectedLanguage === 'br')
                             <div>
                                 <label
                                     class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.cpf') }}</label>

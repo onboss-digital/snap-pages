@@ -20,11 +20,11 @@ class PaymentGatewayFactory
 
         switch (strtolower($gatewayName)) {
             case 'tribopay':
-                return new TriboPayGateway();
+                return app(TriboPayGateway::class);
             case 'stripe':
-                return new StripeGateway();                
+                return app(StripeGateway::class);
             case 'for4payment':
-                return new For4PaymentGateway();
+                return app(For4PaymentGateway::class);
             // Add other gateways here
             default:
                 Log::channel('payment_checkout')->error('PaymentGatewayFactory: Invalid gateway specified - ' . $gatewayName);
