@@ -292,7 +292,9 @@ class PagePay extends Component
         }
 
         try {
-            $this->validate();
+            if ($this->gateway !== 'stripe') {
+                $this->validate();
+            }
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->dispatch('validation:failed');
             throw $e;
