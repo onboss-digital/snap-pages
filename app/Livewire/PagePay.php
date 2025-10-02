@@ -292,9 +292,25 @@ class PagePay extends Component
         }
 
         try {
-            if ($this->gateway !== 'stripe') {
-                $this->validate();
+            // Build the validation rules dynamically.
+            $rules = [
+                'cardName' => 'required|string|max:255',
+                'email' => 'required|email',
+            ];
+
+            if ($this->selectedCurrency === 'BRL') {
+                $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
             }
+
+            // Add card-specific rules only if the gateway is not Stripe.
+            if ($this->gateway !== 'stripe') {
+                $rules['cardNumber'] = 'required|numeric|digits_between:13,19';
+                $rules['cardExpiry'] = ['required', 'string', 'regex:/^(0[1-9]|1[0-2])\/?([0-9]{2})$/'];
+                $rules['cardCvv'] = 'required|numeric|digits_between:3,4';
+            }
+
+            $this->validate($rules);
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->dispatch('validation:failed');
             throw $e;
