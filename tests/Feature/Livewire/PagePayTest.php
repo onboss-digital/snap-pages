@@ -2,32 +2,68 @@
 
 namespace Tests\Feature\Livewire;
 
-use Tests\TestCase;
-use App\Livewire\PagePay;
-use App\Interfaces\PaymentGatewayInterface;
-use App\Services\PaymentGateways\TriboPayGateway;
-use App\Services\PaymentGateways\For4PaymentGateway;
 use App\Factories\PaymentGatewayFactory;
+use App\Livewire\PagePay;
+use App\Services\PaymentGateways\For4PaymentGateway;
+use App\Services\PaymentGateways\TriboPayGateway;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Http; // For mocking HTTP calls if needed at this level
-use Livewire\Livewire;
-use Mockery\MockInterface;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-
+use Livewire\Livewire;
+use Mockery;
+use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
 
 class PagePayTest extends TestCase
 {
     protected function setUp(): void
     {
         parent::setUp();
-        // Ensure necessary config for PagePay component is set, e.g., plans
-        // This was identified as a problem in the previous subtask report, so ensure it's handled.
         Config::set('services.tribopay.api_token', 'test_tribo_token');
         Config::set('services.tribopay.api_url', 'https://api.tribopay.com.br');
         Config::set('services.for4payment.api_key', 'test_for4_key');
         Config::set('services.for4payment.api_url', 'https://api.for4payment.com');
         Log::shouldReceive('channel->info')->andReturnNull();
         Log::shouldReceive('channel->error')->andReturnNull();
+
+        // Mock the external API calls
+        Http::fake([
+            config('services.streamit.api_url') . '/get-plans' => Http::response([
+                'data' => [
+                    [
+                        'pages_product_external_id' => 'prod_monthly_123',
+                        'duration' => 'month',
+                        'duration_value' => 1,
+                        'price' => 5000,
+                        'name' => 'Monthly',
+                        'pages_upsell_url' => 'http://test.com/upsell',
+                        'order_bumps' => [],
+                    ],
+                    [
+                        'pages_product_external_id' => 'cupxl',
+                        'duration' => 'month',
+                        'duration_value' => 6,
+                        'price' => 30000,
+                        'name' => 'Semi-Annual',
+                        'pages_upsell_url' => null,
+                        'order_bumps' => [],
+                    ]
+                ]
+            ], 200),
+            config('services.stripe.api_url') . '/products/prod_monthly_123' => Http::response(['id' => 'prod_monthly_123', 'name' => 'Monthly Plan'], 200),
+            config('services.stripe.api_url') . '/prices?product=prod_monthly_123&limit=100' => Http::response([
+                'data' => [
+                    ['id' => 'price_monthly_brl', 'unit_amount' => 3990, 'currency' => 'brl', 'recurring' => ['interval' => 'month'], 'active' => true]
+                ]
+            ], 200),
+            config('services.stripe.api_url') . '/products/cupxl' => Http::response(['id' => 'cupxl', 'name' => 'Semi-Annual Plan'], 200),
+            config('services.stripe.api_url') . '/prices?product=cupxl&limit=100' => Http::response([
+                'data' => [
+                    ['id' => 'price_semiannual_brl', 'unit_amount' => 19990, 'currency' => 'brl', 'recurring' => ['interval' => 'month'], 'active' => true]
+                ]
+            ], 200),
+        ]);
     }
 
     private function getFilledPagePayComponent()
@@ -49,12 +85,9 @@ class PagePayTest extends TestCase
     {
         Config::set('services.default_payment_gateway', 'tribopay');
 
-        // Mock the TriboPayGateway specifically for this integration test
-        // This ensures we are testing the PagePay component's interaction,
-        // not the gateway's external calls directly here.
         $this->instance(
-            PaymentGatewayInterface::class,
-            \Mockery::mock(TriboPayGateway::class, function (MockInterface $mock) {
+            TriboPayGateway::class,
+            Mockery::mock(TriboPayGateway::class, function (MockInterface $mock) {
                 $mock->shouldReceive('processPayment')
                     ->once()
                     // The data passed to processPayment will be based on PagePay's prepareCheckoutData
@@ -70,7 +103,7 @@ class PagePayTest extends TestCase
         );
 
         $this->getFilledPagePayComponent()
-            ->call('startCheckout') // This should trigger sendCheckout directly as it's not an upsell plan
+            ->call('startCheckout')
             ->assertHasNoErrors()
             ->assertRedirect('/thank-you-tribopay');
     }
@@ -81,8 +114,8 @@ class PagePayTest extends TestCase
         Config::set('services.default_payment_gateway', 'for4payment');
 
         $this->instance(
-            PaymentGatewayInterface::class,
-            \Mockery::mock(For4PaymentGateway::class, function (MockInterface $mock) {
+            For4PaymentGateway::class,
+            Mockery::mock(For4PaymentGateway::class, function (MockInterface $mock) {
                 $mock->shouldReceive('processPayment')
                     ->once()
                     ->with(Mockery::on(function ($data) {
@@ -109,8 +142,8 @@ class PagePayTest extends TestCase
         Config::set('services.default_payment_gateway', 'tribopay'); // or any gateway
 
         $this->instance(
-            PaymentGatewayInterface::class,
-            \Mockery::mock(TriboPayGateway::class, function (MockInterface $mock) { // Using TriboPay as an example
+            TriboPayGateway::class,
+            Mockery::mock(TriboPayGateway::class, function (MockInterface $mock) { // Using TriboPay as an example
                 $mock->shouldReceive('processPayment')
                     ->once()
                     ->andReturn([
@@ -133,8 +166,8 @@ class PagePayTest extends TestCase
         Config::set('services.default_payment_gateway', 'tribopay');
 
         $this->instance(
-            PaymentGatewayInterface::class,
-            \Mockery::mock(TriboPayGateway::class, function (MockInterface $mock) {
+            TriboPayGateway::class,
+            Mockery::mock(TriboPayGateway::class, function (MockInterface $mock) {
                 $mock->shouldReceive('processPayment')
                     ->once()
                     // Check that the amount/plan reflects the accepted upsell (semi-annual)
@@ -181,7 +214,7 @@ class PagePayTest extends TestCase
 
     protected function tearDown(): void
     {
-        \Mockery::close();
+        Mockery::close();
         parent::tearDown();
     }
 }

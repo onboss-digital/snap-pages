@@ -13,9 +13,9 @@ class For4PaymentGateway implements PaymentGatewayInterface
     protected $apiKey;
     protected $apiUrl;
 
-    public function __construct()
+    public function __construct(Client $httpClient = null)
     {
-        $this->httpClient = new Client();
+        $this->httpClient = $httpClient ?: new Client();
         // It's good practice to use config values for API keys and URLs
         $this->apiKey = config('services.for4payment.api_key');
         $this->apiUrl = config('services.for4payment.api_url');

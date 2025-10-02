@@ -756,6 +756,18 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 @push('scripts')
 <script>
     document.addEventListener('livewire:init', () => {
+        Livewire.on('checkout-success', (event) => {
+            const purchaseData = event.purchaseData;
+            if (typeof fbq === 'function') {
+                fbq('track', 'Purchase', {
+                    value: purchaseData.value,
+                    currency: purchaseData.currency,
+                    content_ids: purchaseData.content_ids,
+                    content_type: purchaseData.content_type,
+                    transaction_id: purchaseData.transaction_id
+                });
+            }
+        });
         Livewire.on('validation:failed', () => {
             console.log('Validation failed: Scrolling to payment section.');
             const paymentSection = document.getElementById('payment-method-section');

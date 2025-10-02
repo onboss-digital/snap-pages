@@ -425,6 +425,19 @@ class PagePay extends Component
             $this->showProcessingModal = false; // Ensure it's hidden on erro
             $this->showErrorModal = false;
 
+            // Prepare data for the Purchase event
+            $purchaseData = [
+                'transaction_id' => $response['transaction_id'] ?? $response['data']['transaction_id'] ?? null,
+                'value' => $checkoutData['amount'] / 100,
+                'currency' => $checkoutData['currency_code'],
+                'content_ids' => array_map(function ($item) {
+                    return $item['product_hash'];
+                }, $checkoutData['cart']),
+                'content_type' => 'product',
+            ];
+
+            // Dispatch the event to the browser
+            $this->dispatch('checkout-success', purchaseData: $purchaseData);
 
             if (isset($response['data']) && !empty($response['data'])) {
                 // data existe e não está vazia

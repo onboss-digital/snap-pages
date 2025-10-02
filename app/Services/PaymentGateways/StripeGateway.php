@@ -14,12 +14,12 @@ class StripeGateway implements PaymentGatewayInterface
     private string $redirectURL = "https://web.snaphubb.online/obg/";
     private Client $client;
 
-    public function __construct()
+    public function __construct(Client $client = null)
     {
         $this->apiKey = config('services.stripe.api_secret_key');
         $this->baseUrl = config('services.stripe.api_url');
 
-        $this->client = new Client([
+        $this->client = $client ?: new Client([
             'base_uri' => $this->baseUrl,
             'headers' => [
                 'Authorization' => "Bearer {$this->apiKey}",
