@@ -135,11 +135,11 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                 </div>
             </div>
 
-            <div class="mt-6 w-full rounded-xl overflow-hidden relative bg-gray-900 aspect-square md:aspect-auto md:h-[400px]">
-                <!-- Banners -->
-                <img class="absolute inset-0 w-full h-full object-cover" src="{{ __('checkout.banner_desktop') }}" alt="Promotional Banner">
-                <img class="absolute inset-0 w-full h-full object-cover" src="{{ __('checkout.banner_mobile') }}" alt="Promotional Banner">
-                <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent"></div>
+            <div class="mt-6 w-full rounded-xl overflow-hidden bg-gray-900">
+                <!-- Desktop Banner -->
+                <img class="hidden md:block w-full" src="{{ __('checkout.banner_desktop') }}" alt="Promotional Banner">
+                <!-- Mobile Banner -->
+                <img class="block md:hidden w-full" src="{{ __('checkout.banner_mobile') }}" alt="Promotional Banner">
             </div>
 
             <h1 class="text-3xl md:text-4xl font-bold text-white mt-6 text-center">
