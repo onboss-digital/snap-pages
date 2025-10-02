@@ -14,7 +14,8 @@ class PagePay extends Component
 {
 
     public $paymentMethodId, $cardName, $cardNumber, $cardExpiry, $cardCvv, $email, $phone, $cpf,
-        $plans, $modalData, $product, $testimonials = [];
+        $plans, $modalData, $product, $testimonials = [],
+        $utm_source, $utm_medium, $utm_campaign, $utm_id, $utm_term, $utm_content;
 
     // Modais
     public $showSuccessModal = false;
@@ -110,6 +111,13 @@ class PagePay extends Component
 
     public function mount(PaymentGatewayInterface $paymentGateway = null) // Modified to allow injection, or resolve via factory
     {
+        $this->utm_source = request()->query('utm_source');
+        $this->utm_medium = request()->query('utm_medium');
+        $this->utm_campaign = request()->query('utm_campaign');
+        $this->utm_id = request()->query('utm_id');
+        $this->utm_term = request()->query('utm_term');
+        $this->utm_content = request()->query('utm_content');
+
         if (env('APP_DEBUG')) {
             $this->debug();
         }
@@ -529,6 +537,12 @@ class PagePay extends Component
             'metadata' => [
                 'product_main_hash' => $this->product['hash'],
                 'bumps_selected' => collect($this->bumps)->where('active', true)->pluck('id')->toArray(),
+                'utm_source' => $this->utm_source,
+                'utm_medium' => $this->utm_medium,
+                'utm_campaign' => $this->utm_campaign,
+                'utm_id' => $this->utm_id,
+                'utm_term' => $this->utm_term,
+                'utm_content' => $this->utm_content,
             ]
         ];
     }

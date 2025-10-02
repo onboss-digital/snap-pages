@@ -123,4 +123,10 @@ class For4PaymentGateway implements PaymentGatewayInterface
             ];
         }
     }
+
+    public function formatPlans(mixed $data, string $selectedCurrency): array
+    {
+        // Placeholder implementation to satisfy the interface.
+        return [];
+    }
 }

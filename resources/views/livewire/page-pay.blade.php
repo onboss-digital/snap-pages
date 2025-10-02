@@ -73,13 +73,15 @@ $gateway = config('services.default_payment_gateway', 'stripe');
         s.parentNode.insertBefore(t, s)
     }(window, document, 'script',
         'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '611486964514786');
-    fbq('track', 'PageView');
+    fbq('init', '491262282523520');
+    fbq('track', 'InitiateCheckout');
 </script>
 <noscript><img height="1" width="1" style="display:none"
-        src="https://www.facebook.com/tr?id=611486964514786&ev=PageView&noscript=1" /></noscript>
+        src="https://www.facebook.com/tr?id=491262282523520&ev=InitiateCheckout&noscript=1" /></noscript>
 <!-- End Meta Pixel Code -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-YX71NZN3XK"></script>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VYXG6DL5W4"></script>
 <script>
     window.dataLayer = window.dataLayer || [];
 
@@ -88,8 +90,9 @@ $gateway = config('services.default_payment_gateway', 'stripe');
     }
     gtag('js', new Date());
 
-    gtag('config', 'G-YX71NZN3XK');
+    gtag('config', 'G-VYXG6DL5W4');
 </script>
+<!-- End Google Analytics -->
 @endsection
 
 @section('scripts')
