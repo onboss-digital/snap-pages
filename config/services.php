@@ -57,4 +57,12 @@ return [
         'api_url' => env('STREAMIT_API_URL'),
     ],
 
+    // ===== ABACATEPAY (NOVO) =====
+    'abacatepay' => [
+        'api_key' => env('ABACATEPAY_API_KEY'),
+        'api_url' => env('ABACATEPAY_API_URL', 'https://api.abacatepay.com/v1'),
+        'pix_expiration' => env('ABACATEPAY_PIX_EXPIRATION', 1800), // 30 minutos em segundos
+        'pix_product_id' => env('ABACATEPAY_PIX_PRODUCT_ID', null),
+    ],
+
 ];
