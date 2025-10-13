@@ -456,6 +456,7 @@ class PagePay extends Component
                 $this->pixData = $response['data'];
                 $this->pixStatus = $response['data']['status'] ?? 'PENDING';
                 $this->showProcessingModal = false;
+                $this->dispatch('pix-generated');
                 
                 Log::channel('payment_checkout')->info('PIX criado', [
                     'pix_id' => $this->pixData['pix_id'],
@@ -736,8 +737,9 @@ class PagePay extends Component
                 $this->pixStatus = $response['data']['status'];
 
                 if ($this->pixStatus === 'PAID') {
-                    // Redirecionar para página de obrigado
-                    return redirect()->to('https://web.snaphubb.online/obg/');
+                    $this->dispatch('pix-paid');
+                } elseif (in_array($this->pixStatus, ['EXPIRED', 'FAILED'])) {
+                    $this->dispatch('pix-failed');
                 }
             }
         } catch (\Exception $e) {

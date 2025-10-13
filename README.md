@@ -111,3 +111,88 @@ To add support for a new payment gateway, follow these steps:
     *   Update or add integration tests in `tests/Feature/Livewire/PagePayTest.php` to cover checkout flows using your new gateway (mocking its external API calls).
 
 By following these steps, you can extend the application to support various payment providers while keeping the core checkout logic decoupled.
+# Implementação de Pagamento PIX com Abacate Pay
+
+Este documento detalha a implementação da funcionalidade de pagamento PIX utilizando a Abacate Pay.
+
+## Arquivos Criados
+
+- : Este arquivo contém a lógica de integração com a API da Abacate Pay. Ele é responsável por criar a cobrança PIX e verificar o status do pagamento.
+
+## Arquivos Modificados
+
+- : Este arquivo foi modificado para incluir a  como um gateway de pagamento disponível.
+- : O componente Livewire foi atualizado para manipular o fluxo de pagamento PIX. As principais alterações incluem:
+    - Despachar eventos Livewire (, , ) para o front-end.
+    - Chamar o  para criar cobranças PIX e verificar o status do pagamento.
+- : O arquivo de visualização foi atualizado para incluir o polling de JavaScript para o status do PIX.
+
+## Configuração de Produção
+
+Para configurar o ambiente de produção, os seguintes arquivos precisam ser atualizados:
+
+- :
+    - : Defina para sua chave de API de produção da Abacate Pay.
+    - : Defina para o URL da API de produção da Abacate Pay.
+    - : Defina como  se o PIX for o método de pagamento padrão.
+- :
+    - Configure as credenciais da Abacate Pay no array .
+
+
+
+- :
+    - Atualize os URLs de redirecionamento para  e  para seus URLs de produção.
+
+
+
+# Implementação de Pagamento PIX com Abacate Pay
+
+Este documento detalha a implementação da funcionalidade de pagamento PIX utilizando a Abacate Pay.
+
+## Arquivos Criados
+
+- `app/Services/PaymentGateways/AbacatePayGateway.php`: Este arquivo contém a lógica de integração com a API da Abacate Pay. Ele é responsável por criar a cobrança PIX e verificar o status do pagamento.
+
+## Arquivos Modificados
+
+- `app/Factories/PaymentGatewayFactory.php`: Este arquivo foi modificado para incluir a `AbacatePayGateway` como um gateway de pagamento disponível.
+- `app/Livewire/PagePay.php`: O componente Livewire foi atualizado para manipular o fluxo de pagamento PIX. As principais alterações incluem:
+    - Despachar eventos Livewire (`pix-generated`, `pix-paid`, `pix-failed`) para o front-end.
+    - Chamar o `AbacatePayGateway` para criar cobranças PIX e verificar o status do pagamento.
+- `resources/views/livewire/page-pay.blade.php`: O arquivo de visualização foi atualizado para incluir o polling de JavaScript para o status do PIX.
+
+## Configuração de Produção
+
+Para configurar o ambiente de produção, os seguintes arquivos precisam ser atualizados:
+
+- `.env`:
+    - `ABACATEPAY_API_KEY`: Defina para sua chave de API de produção da Abacate Pay.
+    - `ABACATEPAY_API_URL`: Defina para o URL da API de produção da Abacate Pay.
+    - `DEFAULT_PAYMENT_GATEWAY`: Defina como `abacatepay` se o PIX for o método de pagamento padrão.
+- `config/services.php`:
+    - Configure as credenciais da Abacate Pay no array `abacatepay`.
+
+```php
+'abacatepay' => [
+    'api_key' => env('ABACATEPAY_API_KEY'),
+    'api_url' => env('ABACATEPAY_API_URL', 'https://api.abacatepay.com/v1'),
+    'pix_expiration' => env('ABACATEPAY_PIX_EXPIRATION', 1800), // in seconds
+],
+```
+
+- `resources/views/livewire/page-pay.blade.php`:
+    - Atualize os URLs de redirecionamento para `pix-paid` e `pix-failed` para seus URLs de produção.
+
+```javascript
+Livewire.on('pix-paid', () => {
+    console.log('PIX pago! Redirecionando...');
+    stopPixPolling();
+    window.location.href = 'SEU_URL_DE_SUCESSO_AQUI';
+});
+
+Livewire.on('pix-failed', () => {
+    console.log('PIX falhou! Redirecionando...');
+    stopPixPolling();
+    window.location.href = 'SEU_URL_DE_FALHA_AQUI';
+});
+```
