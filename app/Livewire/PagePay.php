@@ -85,15 +85,20 @@ class PagePay extends Component
     {
         $rules = [
             'cardName' => 'required|string|max:255',
-            'cardNumber' => 'required|numeric|digits_between:13,19',
-            'cardExpiry' => ['required', 'string', 'regex:/^(0[1-9]|1[0-2])\/?([0-9]{2})$/'],
-            'cardCvv' => 'required|numeric|digits_between:3,4',
             'email' => 'required|email',
             'phone' => ['nullable', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
         ];
+
         if ($this->selectedLanguage === 'br') {
             $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
         }
+
+        if ($this->gateway !== 'stripe') {
+            $rules['cardNumber'] = 'required|numeric|digits_between:13,19';
+            $rules['cardExpiry'] = ['required', 'string', 'regex:/^(0[1-9]|1[0-2])\/?([0-9]{2})$/'];
+            $rules['cardCvv'] = 'required|numeric|digits_between:3,4';
+        }
+
         return $rules;
     }
 
@@ -136,11 +141,20 @@ class PagePay extends Component
         $this->selectedPlan = Session::get('selectedPlan', 'monthly');
         $this->calculateTotals();
         $this->activityCount = rand(1, 50);
-        $this->product = [
-            'hash' => $this->plans[$this->selectedPlan]['hash'], // This hash might be gateway-specific
-            'title' => $this->plans[$this->selectedPlan]['label'],
-            'price_id' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['id'] ?? null,
-        ];
+
+        if (isset($this->plans[$this->selectedPlan])) {
+            $this->product = [
+                'hash' => $this->plans[$this->selectedPlan]['hash'] ?? null,
+                'title' => $this->plans[$this->selectedPlan]['label'] ?? '',
+                'price_id' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['id'] ?? null,
+            ];
+        } else {
+            $this->product = [
+                'hash' => null,
+                'title' => '',
+                'price_id' => null,
+            ];
+        }
     }
 
     public function getPlans()
@@ -172,59 +186,18 @@ class PagePay extends Component
                 return [];
             })
             ->wait();
-
-        // // Plan hashes might need to be gateway-specific or mapped
-        // return \GuzzleHttp\Promise\promise_for([
-        //     'monthly' => [
-        //         'hash' => 'rwquocfj5c', // Gateway-specific?
-        //         'label' => __('payment.monthly'),
-        //         'nunber_months' => 1,
-        //         'prices' => [
-        //             'BRL' => ['origin_price' => 50.00, 'descont_price' => 39.90],
-        //             'USD' => ['origin_price' => 10.00, 'descont_price' => 7.90],
-        //             'EUR' => ['origin_price' => 9.00, 'descont_price' => 6.90],
-        //         ],
-        //     ],
-        //     'quarterly' => [
-        //         'hash' => 'velit nostrud dolor in deserunt', // Gateway-specific?
-        //         'label' => __('payment.quarterly'),
-        //         'nunber_months' => 3,
-        //         'prices' => [
-        //             'BRL' => ['origin_price' => 150.00, 'descont_price' => 109.90],
-        //             'USD' => ['origin_price' => 30.00, 'descont_price' => 21.90],
-        //             'EUR' => ['origin_price' => 27.00, 'descont_price' => 19.90],
-        //         ],
-        //     ],
-        //     'semi-annual' => [
-        //         'hash' => 'cupxl', // Gateway-specific?
-        //         'label' => __('payment.semi-annual'),
-        //         'nunber_months' => 6,
-        //         'prices' => [
-        //             'BRL' => ['origin_price' => 300.00, 'descont_price' => 199.90],
-        //             'USD' => ['origin_price' => 60.00, 'descont_price' => 39.90],
-        //             'EUR' => ['origin_price' => 54.00, 'descont_price' => 35.90],
-        //         ],
-        //     ]
-        // ]);
-        // Ensure getPlans returns the full structure as before
     }
-
-    // calculateTotals, startCheckout, rejectUpsell, acceptUpsell remain largely the same
-    // but sendCheckout and prepareCheckoutData will be modified.
 
     public function calculateTotals()
 {
-    // 1. Verificamos se o plano selecionado realmente existe nos dados da API
     if (!isset($this->plans[$this->selectedPlan])) {
         Log::error('Plano selecionado não encontrado na resposta da API.', [
             'selected_plan' => $this->selectedPlan
         ]);
-        // Interrompe a execução para evitar erros em cascata
         return;
     }
     $plan = $this->plans[$this->selectedPlan];
 
-    // 2. Verificamos se existe um array de preços para o plano
     if (!isset($plan['prices']) || !is_array($plan['prices'])) {
         Log::error('Array de preços não encontrado para o plano.', [
             'plan' => $this->selectedPlan
@@ -232,24 +205,19 @@ class PagePay extends Component
         return;
     }
 
-    // 3. Verificamos se a moeda atual tem um preço definido. Se não, tentamos um fallback.
     $availableCurrency = null;
     if (isset($plan['prices'][$this->selectedCurrency])) {
         $availableCurrency = $this->selectedCurrency;
     } elseif (isset($plan['prices']['BRL'])) {
-        // Tenta BRL como primeira alternativa
         $availableCurrency = 'BRL';
     } elseif (isset($plan['prices']['USD'])) {
-        // Tenta USD como segunda alternativa
         $availableCurrency = 'USD';
     }
     
-    // 4. Se nenhuma moeda válida foi encontrada, interrompemos
     if (is_null($availableCurrency)) {
         Log::error('Nenhuma moeda válida (BRL, USD, etc.) encontrada para o plano.', [
             'plan' => $this->selectedPlan
         ]);
-        // Opcional: Adiciona uma mensagem de erro para o usuário
         $this->addError('totals', 'Não foi possível carregar os preços. Tente novamente mais tarde.');
         return;
     }
@@ -257,7 +225,6 @@ class PagePay extends Component
     $this->selectedCurrency = $availableCurrency;
     $prices = $plan['prices'][$this->selectedCurrency];
 
-    // Daqui para baixo, o código original continua, pois agora temos certeza que a variável $prices existe
     $this->totals = [
         'month_price' => $prices['origin_price'] / $plan['nunber_months'],
         'month_price_discount' => $prices['descont_price'] / $plan['nunber_months'],
@@ -300,23 +267,7 @@ class PagePay extends Component
         }
 
         try {
-            // Build the validation rules dynamically.
-            $rules = [
-                'cardName' => 'required|string|max:255',
-                'email' => 'required|email',
-            ];
-
-            if ($this->selectedLanguage === 'br') {
-                $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
-            }
-
-            // Add card-specific rules only if the gateway is not Stripe.
-            if ($this->gateway !== 'stripe') {
-                $rules['cardNumber'] = 'required|numeric|digits_between:13,19';
-                $rules['cardExpiry'] = ['required', 'string', 'regex:/^(0[1-9]|1[0-2])\/?([0-9]{2})$/'];
-                $rules['cardCvv'] = 'required|numeric|digits_between:3,4';
-            }
-
+            $rules = $this->rules();
             $this->validate($rules);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -326,14 +277,12 @@ class PagePay extends Component
 
         try {
             $this->showSecure = true;
-            $this->showLodingModal = true; // Assuming "Loding" is intended
+            $this->showLodingModal = true;
 
             switch ($this->selectedPlan) {
                 case 'monthly':
                 case 'quarterly':
                     if (isset($this->plans['semi-annual'])) {
-                        //$this->showUpsellModal = true;
-
                         $offerValue = round(
                             $this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price']
                                 / $this->plans['semi-annual']['nunber_months'],
@@ -356,11 +305,8 @@ class PagePay extends Component
                                 '.'
                             ),
                         ];
-                        break; // só interrompe se o semi-annual existir
+                        break;
                     }
-
-                    // se não tem semi-annual, segue fluxo normal (igual default)
-                    // não dá break aqui
                 default:
                     $this->showProcessingModal = true;
                     $this->sendCheckout();
@@ -373,28 +319,25 @@ class PagePay extends Component
             ]);
         }
 
-
         $this->showLodingModal = false;
     }
 
     public function rejectUpsell()
     {
         $this->showUpsellModal = false;
-        // Logic for downsell offer (quarterly)
-        if ($this->selectedPlan === 'monthly') { // Only show downsell if current plan is monthly
+        if ($this->selectedPlan === 'monthly') {
             $offerValue = round($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'] / $this->plans['quarterly']['nunber_months'], 1);
-            // Corrected discount calculation for downsell
-            $basePriceForDiscountCalc = $this->plans['monthly']['prices'][$this->selectedCurrency]['origin_price']; // Price of the plan they *were* on
+            $basePriceForDiscountCalc = $this->plans['monthly']['prices'][$this->selectedCurrency]['origin_price'];
             $offerDiscont = ($basePriceForDiscountCalc * $this->plans['quarterly']['nunber_months']) - ($offerValue * $this->plans['quarterly']['nunber_months']);
 
             $this->modalData = [
-                'actual_month_value' => $this->totals['month_price_discount'], // This should be from the current 'monthly' plan
+                'actual_month_value' => $this->totals['month_price_discount'],
                 'offer_month_value' => number_format($offerValue, 2, ',', '.'),
-                'offer_total_discount' => number_format(abs($offerDiscont), 2, ',', '.'), // Ensure positive discount
+                'offer_total_discount' => number_format(abs($offerDiscont), 2, ',', '.'),
                 'offer_total_value' => number_format($this->plans['quarterly']['prices'][$this->selectedCurrency]['descont_price'], 2, ',', '.'),
             ];
             $this->showDownsellModal = true;
-        } else { // If they were on quarterly and rejected upsell to semi-annual, just proceed with quarterly
+        } else {
             $this->sendCheckout();
         }
     }
@@ -409,8 +352,6 @@ class PagePay extends Component
 
     public function sendCheckout()
     {
-        //$this->showDownsellModal = $this->showUpsellModal = false;        
-
         $checkoutData = $this->prepareCheckoutData();
         $this->paymentGateway = PaymentGatewayFactory::create();
         $response = $this->paymentGateway->processPayment($checkoutData);
@@ -422,10 +363,9 @@ class PagePay extends Component
             ]);
 
             $this->showSuccessModal = true;
-            $this->showProcessingModal = false; // Ensure it's hidden on erro
+            $this->showProcessingModal = false;
             $this->showErrorModal = false;
 
-            // Prepare data for the Purchase event
             $purchaseData = [
                 'transaction_id' => $response['transaction_id'] ?? $response['data']['transaction_id'] ?? null,
                 'value' => $checkoutData['amount'] / 100,
@@ -436,11 +376,9 @@ class PagePay extends Component
                 'content_type' => 'product',
             ];
 
-            // Dispatch the event to the browser
             $this->dispatch('checkout-success', purchaseData: $purchaseData);
 
             if (isset($response['data']) && !empty($response['data'])) {
-                // data existe e não está vazia
                 $customerId = $response['data']['customerId'];
                 $redirectUrl = $response['data']['redirect_url'];
                 $upsell_productId = $response['data']['upsell_productId'];
@@ -450,7 +388,7 @@ class PagePay extends Component
                     return;
                 }
             }
-            $redirectUrl = $response['redirect_url'] ?? "https://web.snaphubb.online/obg/"; // Default or from response
+            $redirectUrl = $response['redirect_url'] ?? "https://web.snaphubb.online/obg/";
             return redirect()->to($redirectUrl);
         } else {
             Log::channel('payment_checkout')->error('PagePay: Payment failed via gateway.', [
@@ -462,12 +400,10 @@ class PagePay extends Component
                 $errorMessage .= ' Details: ' . implode(', ', (array)$response['errors']);
             }
             $this->addError('payment', $errorMessage);
-            // Potentially show a generic error modal or message on the page
             $this->showErrorModal = true;
-            $this->showProcessingModal = false; // Ensure it's hidden on erro
+            $this->showProcessingModal = false;
         }
     }
-
 
     private function prepareCheckoutData()
     {
@@ -487,10 +423,9 @@ class PagePay extends Component
         $currentPlanDetails = $this->plans[$this->selectedPlan];
         $currentPlanPriceInfo = $currentPlanDetails['prices'][$this->selectedCurrency];
 
-        // plano principal
         $cartItems[] = [
             'product_hash' => $currentPlanDetails['hash'],
-            'title' => $this->product['title'] . ' - ' . $currentPlanDetails['label'],
+            'title' => $currentPlanDetails['label'],
             'price' => (int)round(floatval($currentPlanPriceInfo['descont_price']) * 100),
             'price_id' => $this->product['price_id'] ?? null,
             'recurring' => $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['recurring'] ?? null,
@@ -498,7 +433,6 @@ class PagePay extends Component
             'operation_type' => 1,
         ];
 
-        // bumps ativos
         foreach ($this->bumps as $bump) {
             if (!empty($bump['active'])) {
                 $cartItems[] = [
@@ -513,7 +447,6 @@ class PagePay extends Component
             }
         }
 
-        // customer
         $customerData = [
             'name' => $this->cardName,
             'email' => $this->email,
@@ -522,6 +455,29 @@ class PagePay extends Component
         if ($this->selectedLanguage === 'br' && $this->cpf) {
             $customerData['document'] = preg_replace('/\D/', '', $this->cpf);
         }
+
+        $baseData = [
+            'amount' => (int)round($numeric_final_price * 100),
+            'currency_code' => $this->selectedCurrency,
+            'offer_hash' => $currentPlanDetails['hash'],
+            'upsell_url' => $currentPlanDetails['upsell_url'] ?? null,
+            'payment_method' => 'credit_card',
+            'customer' => $customerData,
+            'cart' => $cartItems,
+            'installments' => 1,
+            'selected_plan_key' => $this->selectedPlan,
+            'language' => $this->selectedLanguage,
+            'metadata' => [
+                'product_main_hash' => $this->product['hash'] ?? $currentPlanDetails['hash'],
+                'bumps_selected' => collect($this->bumps)->where('active', true)->pluck('id')->toArray(),
+                'utm_source' => $this->utm_source,
+                'utm_medium' => $this->utm_medium,
+                'utm_campaign' => $this->utm_campaign,
+                'utm_id' => $this->utm_id,
+                'utm_term' => $this->utm_term,
+                'utm_content' => $this->utm_content,
+            ]
+        ];
 
         $cardDetails = [
             'number' => $this->cardNumber,
@@ -533,31 +489,10 @@ class PagePay extends Component
         if ($this->selectedLanguage === 'br' && $this->cpf) {
             $cardDetails['document'] = preg_replace('/\D/', '', $this->cpf);
         }
+        $baseData['payment_method_id'] = $this->paymentMethodId;
+        $baseData['card'] = $cardDetails;
 
-        return [
-            'amount' => (int)round($numeric_final_price * 100),
-            'currency_code' => $this->selectedCurrency,
-            'offer_hash' => $currentPlanDetails['hash'],
-            'upsell_url' => $currentPlanDetails['upsell_url'] ?? null,
-            'payment_method' => 'credit_card',
-            'payment_method_id' => $this->paymentMethodId,
-            'card' => $cardDetails,
-            'customer' => $customerData,
-            'cart' => $cartItems,
-            'installments' => 1,
-            'selected_plan_key' => $this->selectedPlan,
-            'language' => $this->selectedLanguage,
-            'metadata' => [
-                'product_main_hash' => $this->product['hash'],
-                'bumps_selected' => collect($this->bumps)->where('active', true)->pluck('id')->toArray(),
-                'utm_source' => $this->utm_source,
-                'utm_medium' => $this->utm_medium,
-                'utm_campaign' => $this->utm_campaign,
-                'utm_id' => $this->utm_id,
-                'utm_term' => $this->utm_term,
-                'utm_content' => $this->utm_content,
-            ]
-        ];
+        return $baseData;
     }
 
     public function closeModal()
@@ -578,7 +513,7 @@ class PagePay extends Component
 
     public function acceptDownsell()
     {
-        $this->selectedPlan = 'quarterly'; // Assuming downsell is always to quarterly
+        $this->selectedPlan = 'quarterly';
         $this->calculateTotals();
         $this->showDownsellModal = false;
         $this->sendCheckout();
@@ -592,7 +527,7 @@ class PagePay extends Component
 
     public function getListeners()
     {
-        return []; // Removed Echo listeners
+        return [];
     }
 
     public function updateActivityCount()
@@ -609,11 +544,9 @@ class PagePay extends Component
             $this->selectedCurrency = $lang === 'br' ? 'BRL'
                 : ($lang === 'en' ? 'USD'
                     : ($lang === 'es' ? 'EUR' : 'BRL'));
-            // Recalculate plans and totals as language might affect labels (though prices should be language-agnostic)
-            $this->plans = $this->getPlans(); // Re-fetch plans to update labels
+            $this->plans = $this->getPlans();
             $this->testimonials = trans('checkout.testimonials');
             $this->calculateTotals();
-            // Dispatch an event if JS needs to react to language change for UI elements not covered by Livewire re-render
             $this->dispatch('languageChanged');
         }
     }
