@@ -154,64 +154,98 @@ $gateway = config('services.default_payment_gateway', 'stripe');
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="md:col-span-2">
-                    <!-- Benefits -->
-                    <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
-                        <h2 class="text-xl font-semibold text-white mb-4">{{ __('checkout.benefits_title') }}</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="benefits-container">
-                            @foreach (__('checkout.benefits') as $key => $description)
-                                @if (str_ends_with($key, '_desc')) @continue @endif
-                                <div class="flex items-start space-x-3">
-                                    <div class="p-2 bg-[#E50914] rounded-lg">
-                                        <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="font-medium text-white">{{ $description }}</h3>
-                                        <p class="text-sm text-gray-400">{{ __('checkout.benefits.' . $key . '_desc') }}</p>
-                                    </div>
+                    <!-- Currency Selector -->
+                    {{-- <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
+                        <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.select_currency') }}</h2>
+
+                    <div class="relative">
+                        <select id="currency-selector" name="currency" wire:model="selectedCurrency"
+                            wire:change="calculateTotals"
+                            class="w-full bg-[#2D2D2D] text-white rounded-lg p-4 border border-gray-700 appearance-none pr-10 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all">
+                            @foreach ($currencies as $code => $currency)
+                            <option value="{{ $code }}"
+                                {{ $selectedCurrency == $code ? 'selected' : '' }}>
+                                {{ __($currency['label']) }}
+                            </option>
+                            @endforeach
+                        </select>
+                        <div
+                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-white">
+                            <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20">
+                                <path d="M7 7l3-3 3 3m0 6l-3 3-3-3" stroke="currentColor" stroke-width="1.5"
+                                    stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div> --}}
+
+                <!-- Benefits -->
+                <div class="bg-[#1F1F1F] rounded-xl p-6 mb-6">
+                    <h2 class="text-xl font-semibold text-white mb-4">{{ __('checkout.benefits_title') }}</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="benefits-container">
+                        @foreach (__('checkout.benefits') as $key => $description)
+                            @if (str_ends_with($key, '_desc')) @continue @endif
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 bg-[#E50914] rounded-lg">
+                                    <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-medium text-white">{{ $description }}</h3>
+                                    <p class="text-sm text-gray-400">{{ __('checkout.benefits.' . $key . '_desc') }}</p>
                                 </div>
                             @endforeach
                         </div>
                     </div>
 
-                    <!-- Payment Methods -->
-                    <div id="payment-method-section" class="bg-[#1F1F1F] rounded-xl p-6 mb-6 scroll-mt-8">
-                        <h2 class="text-xl font-semibold text-white mb-4">{{ __('payment.payment_method') }}</h2>
+                <!-- Payment Methods -->
+                <div id="payment-method-section" class="bg-[#1F1F1F] rounded-xl p-6 mb-6 scroll-mt-8">
+                    {{-- ===== MÉTODO DE PAGAMENTO ===== --}}
+<div class="mb-6">
+    <h3 class="text-xl font-bold text-white mb-4">Método de pagamento</h3>
 
-                        <div class="grid grid-cols-1 gap-3">
-                            <div class="relative">
-                                <input type="radio" id="payment-card" name="payment_method" value="credit_card"
-                                    class="peer sr-only" checked />
-                                <label for="payment-card"
-                                    class="flex flex-col items-center justify-center p-4 rounded-lg border border-gray-700 bg-[#2D2D2D] cursor-pointer transition-all hover:bg-gray-800  peer-checked:bg-[#2D2D2D] h-24">
-                                    <svg class="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                    </svg>
-                                    <span class="text-sm font-medium text-white">{{ __('payment.card') }}</span>
-                                </label>
-                            </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {{-- Card Cartão de Crédito --}}
+        <div
+            wire:click="$set('selectedPaymentMethod', 'credit_card')"
+            class="payment-method-card cursor-pointer p-6 rounded-lg border-2 transition-all duration-300
+                {{ $selectedPaymentMethod === 'credit_card' ? 'border-red-500 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:border-gray-600' }}"
+        >
+            <div class="flex flex-col items-center text-center">
+                <svg class="w-12 h-12 mb-3 {{ $selectedPaymentMethod === 'credit_card' ? 'text-red-500' : 'text-gray-400' }}"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+                <span class="text-lg font-semibold {{ $selectedPaymentMethod === 'credit_card' ? 'text-white' : 'text-gray-300' }}">
+                    Cartão
+                </span>
+            </div>
+        </div>
 
-                        </div>
+        {{-- Card PIX (só para Brasil) --}}
+        @if($selectedLanguage === 'br')
+        <div
+            wire:click="$set('selectedPaymentMethod', 'pix')"
+            class="payment-method-card cursor-pointer p-6 rounded-lg border-2 transition-all duration-300
+                {{ $selectedPaymentMethod === 'pix' ? 'border-green-500 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:border-gray-600' }}"
+        >
+            <div class="flex flex-col items-center text-center">
+                <svg class="w-12 h-12 mb-3 {{ $selectedPaymentMethod === 'pix' ? 'text-green-500' : 'text-gray-400' }}"
+                     fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
+                </svg>
+                <span class="text-lg font-semibold {{ $selectedPaymentMethod === 'pix' ? 'text-white' : 'text-gray-300' }}">
+                    PIX
+                </span>
+            </div>
+        </div>
+        @endif
+    </div>
 
-                        <!-- Card payment form -->
-                        <div id="card-payment-form" class="mt-6">
-                            <div class="space-y-4">
-                                @if($gateway !== 'stripe')
-                                <div>
-                                    <label
-                                        class="block text-sm font-medium text-gray-300 mb-1">{{ __('checkout.card_number') }}</label>
-                                    <input name="card_number" type="text" id="card-number"
-                                        x-mask="9999 9999 9999 9999" placeholder="0000 0000 0000 0000"
-                                        wire:model.defer="cardNumber"
-                                        class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
-                                    @error('cardNumber')
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                                    @enderror
-                                </div>
+</div>
 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
@@ -278,6 +312,48 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
+                            </div>
+                            @else
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-300 mb-1">{{ __('checkout.card_number') }}</label>
+                                <div id="card-element" class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" wire:ignore></div>
+                                <div id="card-errors"></div>
+                                <input name="payment_method_id" type="hidden" wire:model.defer="paymentMethodId" id="payment-method-id">
+                            </div>
+                            @endif
+
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.card_name') }}</label>
+                                <input name="card_name" type="text"
+                                    placeholder="{{ __('payment.card_name') }}" wire:model.defer="cardName"
+                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                @error('cardName')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">E-mail</label>
+                                <input name="email" type="email" placeholder="seu@email.com"
+                                    wire:model.defer="email"
+                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                @error('email')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.phone') }}</label>
+                                <input name="phone" type="tel" placeholder="+55 (11) 99999-9999"
+                                    wire:model.defer="phone"
+                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                @error('phone')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
 
                                 @if($selectedLanguage === 'br')
                                 <div>
@@ -319,33 +395,116 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                                     </svg>
                                     {{ $bump['title'] }}
                                 </div>
-                                <p class="text-gray-400 text-sm mt-1">{{ $bump['description'] }}</p>
-                                <p class="text-[#E50914] font-medium mt-2">
-                                    +{{ $currencies[$selectedCurrency]['symbol'] }} {{ number_format($bump['price'], 2, ',', '.') }}
-                                </p>
-                            </label>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.your_name') }}</label>
+                                <input name="pix_name" type="text"
+                                    placeholder="{{ __('payment.your_name_placeholder') }}" wire:model.defer="cardName"
+                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
+                                @error('cardName')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">E-mail</label>
+                                <input name="pix_email" type="email"
+                                    placeholder="seu@email.com" wire:model.defer="email"
+                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
+                                @error('email')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
+                                <input name="pix_phone" type="tel"
+                                    placeholder="+55 (11) 99999-9999" wire:model.defer="phone"
+                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
+                                @error('phone')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">CPF (obrigatório para pagamentos no Brasil)</label>
+                                <input name="pix_cpf" type="text" x-mask="999.999.999-99"
+                                    placeholder="000.000.000-00" wire:model.defer="cpf"
+                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
+                                @error('cpf')
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
                         </div>
-                        @endforeach
+                        @else
+                        <!-- Se já gerou o PIX, mostra o card do PIX -->
+                        @if ($pixData)
+                            <x-pix-card
+                                :pixData="$pixData"
+                                :pixStatus="$pixStatus"
+                                :expiresAt="$pixData['expires_at'] ?? null"
+                            />
+                        @endif
+                        @endif
+
                     </div>
                     @endif
+                </div>
 
-                    <!-- Testimonials -->
-                    <div class="bg-transparent rounded-xl">
-                        <h2 class="text-2xl font-bold text-white mb-6 text-center">{{ __('checkout.testimonials_title') }}</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            @if(is_array($testimonials) && !empty($testimonials))
-                                @foreach (array_slice($testimonials, 0, 4) as $testimonial)
-                                    <div class="bg-gray-800 bg-opacity-50 p-6 rounded-xl border border-gray-700 shadow-lg flex flex-col h-full transform transition-transform hover:scale-105">
-                                        <div class="flex-shrink-0">
-                                            <div class="flex items-center mb-4">
-                                                <img src="https://ui-avatars.com/api/?name={{ substr($testimonial['name'], 0, 1) }}&color=FFFFFF&background=E50914&bold=true&size=48" alt="Avatar" class="w-12 h-12 rounded-full mr-4 border-2 border-red-500">
-                                                <div>
-                                                    <p class="font-bold text-white text-lg">{{ $testimonial['name'] }}</p>
-                                                    <div class="flex text-yellow-400 mt-1">
-                                                        @for ($i = 0; $i < 5; $i++)
-                                                            <svg class="w-5 h-5" fill="{{ $i < $testimonial['stars'] ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.519 4.674c.3.921-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.519-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
-                                                        @endfor
-                                                    </div>
+                <!-- Order Bumps -->
+                @if(!empty($bumps))
+                <div class="bg-[#1F1F1F] rounded-xl p-5 border border-gray-700">
+                    @foreach ($bumps as $index => $bump)
+                    <div class="flex items-start mb-4 last:mb-0">
+                        <div class="flex items-center h-5">
+                            <input
+                                id="order-bump-{{ $bump['id'] }}"
+                                type="checkbox"
+                                class="w-5 h-5 text-[#E50914] bg-[#2D2D2D] border-gray-600 rounded
+                           focus:ring-[#E50914] focus:ring-opacity-25 focus:ring-2
+                           focus:border-[#E50914] cursor-pointer"
+                                wire:model="bumps.{{ $index }}.active"
+                                wire:change="calculateTotals" />
+                        </div>
+                        <label for="order-bump-{{ $bump['id'] }}" class="ml-3 cursor-pointer">
+                            <div class="text-white text-base font-semibold flex items-center">
+                                <svg class="h-5 w-5 text-[#E50914] mr-1" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                {{ $bump['title'] }}
+                            </div>
+                            <p class="text-gray-400 text-sm mt-1">{{ $bump['description'] }}</p>
+                            <p class="text-[#E50914] font-medium mt-2">
+                                +{{ $currencies[$selectedCurrency]['symbol'] }} {{ number_format($bump['price'], 2, ',', '.') }}
+                            </p>
+                        </label>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+
+
+
+
+                <!-- Testimonials -->
+                <div class="bg-transparent rounded-xl">
+                    <h2 class="text-2xl font-bold text-white mb-6 text-center">{{ __('checkout.testimonials_title') }}</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        @if(is_array($testimonials) && !empty($testimonials))
+                            @foreach (array_slice($testimonials, 0, 4) as $testimonial)
+                                <div class="bg-gray-800 bg-opacity-50 p-6 rounded-xl border border-gray-700 shadow-lg flex flex-col h-full transform transition-transform hover:scale-105">
+                                    <div class="flex-shrink-0">
+                                        <div class="flex items-center mb-4">
+                                            <img src="https://ui-avatars.com/api/?name={{ substr($testimonial['name'], 0, 1) }}&color=FFFFFF&background=E50914&bold=true&size=48" alt="Avatar" class="w-12 h-12 rounded-full mr-4 border-2 border-red-500">
+                                            <div>
+                                                <p class="font-bold text-white text-lg">{{ $testimonial['name'] }}</p>
+                                                <div class="flex text-yellow-400 mt-1">
+                                                    @for ($i = 0; $i < 5; $i++)
+                                                        <svg class="w-5 h-5" fill="{{ $i < $testimonial['stars'] ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.519 4.674c.3.921-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.519-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+                                                    @endfor
                                                 </div>
                                             </div>
                                         </div>
@@ -411,9 +570,24 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                                 {{ $totals['month_price_discount'] ?? '00' }}{{ __('payment.per_month') }}</span>
                         </div>
 
-                        <!-- Price breakdown -->
-                        <div class="border-t border-gray-700 pt-5 my-4 space-t-2">
-                        </div>
+                    <!-- Price breakdown -->
+                    <div class="border-t border-gray-700 pt-5 my-4 space-t-2">
+                        <!-- Coupon area -->
+                        {{-- <div>
+                                <div class="flex space-x-2">
+                                    <input name="coupon_code" type="text" id="coupon-input"
+                                        placeholder="{{ __('payment.coupon_code') }}"
+                        class="w-2/3 bg-[#2D2D2D] text-white rounded-lg p-2 text-sm border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                        <button type="button" id="apply-coupon"
+                            class="w-1/3 bg-gray-700 hover:bg-gray-600 text-white text-sm py-2 px-2 rounded-lg transition-all">
+                            {{ __('payment.apply') }}
+                        </button>
+                    </div>
+                    <div id="coupon-message" class="text-xs mt-1 text-green-400 hidden">
+                        {{ __('payment.coupon_success') }}
+                    </div>
+                </div> --}}
+            </div>
 
 
                 <!-- Resumo Final com Descontos -->
@@ -600,6 +774,8 @@ $gateway = config('services.default_payment_gateway', 'stripe');
             <h3 class="text-xl font-bold text-white mb-2">{{ __('payment.processing_payment') }}</h3>
             <p class="text-gray-300">{{ __('payment.please_wait') }}</p>
         </div>
+        <h3 class="text-xl font-bold text-white mb-2">{{ __('payment.processing_payment') }}</h3>
+        <p class="text-gray-300">{{ __('payment.please_wait') }}</p>
     </div>
 
     <!-- Error Modal -->
@@ -614,17 +790,17 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                 </button>
         </div>
     </div>
+</div>
 
-    <!-- Error Modal -->
-    <div id="success-modal"
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if (!$showSuccessModal) hidden @endif">
-        <div class="bg-[#1F1F1F] rounded-xl p-8 max-w-md w-full mx-4 text-center">
-            <h3 class="text-xl font-bold text-white mb-2">{{ __('payment.success') }}</h3>
-                <button id="close-error" wire:click.prevent="closeModal"
-                    class="bg-[#42b70a] hover:bg-[#2a7904] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center cursor-pointer">
-                    Close
-                </button>
-        </div>
+<!-- Error Modal -->
+<div id="success-modal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if (!$showSuccessModal) hidden @endif">
+    <div class="bg-[#1F1F1F] rounded-xl p-8 max-w-md w-full mx-4 text-center">
+        <h3 class="text-xl font-bold text-white mb-2">{{ __('payment.success') }}</h3>
+            <button id="close-error" wire:click.prevent="closeModal"
+                class="bg-[#42b70a] hover:bg-[#2a7904] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center cursor-pointer">
+                Close
+            </button>
     </div>
 
     <!-- Downsell Modal -->
@@ -651,164 +827,165 @@ $gateway = config('services.default_payment_gateway', 'stripe');
                     <h3 class="text-2xl font-bold text-white">{{ __('payment.special_offer') }}</h3>
                     <p class="text-gray-300 mt-2">{{ __('payment.try_quarterly') }}</p>
                 </div>
+                <h3 class="text-2xl font-bold text-white">{{ __('payment.special_offer') }}</h3>
+                <p class="text-gray-300 mt-2">{{ __('payment.try_quarterly') }}</p>
+            </div>
 
-                <div class="bg-[#2D2D2D] rounded-lg p-4 mb-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-gray-300">{{ __('payment.monthly') }} {{ __('payment.current') }}</span>
-                        <span class="text-white font-medium" id="downsell-monthly">
-                            {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
-                            {{ $modalData['actual_month_value'] ?? 00 }} {{ __('payment.per_month') }}
-                        </span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-white font-medium">{{ __('payment.quarterly') }}
-                        </span>
-                        <span class="text-[#E50914] font-bold" id="downsell-quarterly">
-                            {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
-                            {{ $modalData['offer_month_value'] ?? 00 }}
-                            {{ __('payment.per_month') }}
+            <div class="bg-[#2D2D2D] rounded-lg p-4 mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-300">{{ __('payment.monthly') }} {{ __('payment.current') }}</span>
+                    <span class="text-white font-medium" id="downsell-monthly">
+                        {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                        {{ $modalData['actual_month_value'] ?? 00 }} {{ __('payment.per_month') }}
+                    </span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-white font-medium">{{ __('payment.quarterly') }}
+                    </span>
+                    <span class="text-[#E50914] font-bold" id="downsell-quarterly">
+                        {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                        {{ $modalData['offer_month_value'] ?? 00 }}
+                        {{ __('payment.per_month') }}
 
-                        </span>
-                    </div>
-                    <div class="mt-2 text-green-500 text-sm text-right" id="downsell-savings">
-                        {{ __('payment.savings') }}
-                        {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
-                        {{ $modalData['offer_total_discount'] ?? 00 }}
-                        {{ __('payment.quarterly') }}
-                    </div>
-                    <div class="mt-2 text-sm text-right" id="upsell-savings">
-                        {{ __('payment.total_to_pay') }}
-                        {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
-                        {{ $modalData['offer_total_value'] ?? 00 }}
-                    </div>
+                    </span>
+                </div>
+                <div class="mt-2 text-green-500 text-sm text-right" id="downsell-savings">
+                    {{ __('payment.savings') }}
+                    {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                    {{ $modalData['offer_total_discount'] ?? 00 }}
+                    {{ __('payment.quarterly') }}
+                </div>
+                <div class="mt-2 text-sm text-right" id="upsell-savings">
+                    {{ __('payment.total_to_pay') }}
+                    {{ $currencies[$selectedCurrency]['symbol'] ?? 'R$' }}
+                    {{ $modalData['offer_total_value'] ?? 00 }}
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <button id="downsell-reject" wire:click.prevent="rejectDownsell"
-                        class="py-3 text-white font-medium rounded-lg border border-gray-600 hover:bg-[#2D2D2D] transition-colors">
-                        {{ __('payment.no_thanks') }}
-                    </button>
-                    <button id="downsell-accept" wire:click.prevent="acceptDownsell"
-                        class="py-3 bg-[#E50914] hover:bg-[#B8070F] text-white font-bold rounded-lg transition-colors">
-                        {{ __('payment.want_offer') }}
-                    </button>
-                </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button id="downsell-reject" wire:click.prevent="rejectDownsell"
+                    class="py-3 text-white font-medium rounded-lg border border-gray-600 hover:bg-[#2D2D2D] transition-colors">
+                    {{ __('payment.no_thanks') }}
+                </button>
+                <button id="downsell-accept" wire:click.prevent="acceptDownsell"
+                    class="py-3 bg-[#E50914] hover:bg-[#B8070F] text-white font-bold rounded-lg transition-colors">
+                    {{ __('payment.want_offer') }}
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Personalização Modal -->
-    <div class="fixed inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center text-white z-50 @if (!$showLodingModal) hidden @endif">
-        <svg class="animate-spin h-10 w-10 text-red-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-            viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-        </svg>
-        <p class="text-lg">{{ __('payment.customizing') }}</p>
-        <p class="text-sm mt-2 text-gray-400">{{ __('payment.optimizing') }}</p>
-    </div>
-    <!-- Stripe JS -->
-    @push('scripts')
-    @if($gateway === 'stripe')
-    <script src="https://js.stripe.com/v3/"></script>
-    <script>
-        let stripeCard = null;
-        const stripe = Stripe("{{ config('services.stripe.api_public_key') }}");
+<!-- Personalização Modal -->
+<div class="fixed inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center text-white z-50 @if (!$showLodingModal) hidden @endif">
+    <svg class="animate-spin h-10 w-10 text-red-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+        viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+            stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+    </svg>
+    <p class="text-lg">{{ __('payment.customizing') }}</p>
+    <p class="text-sm mt-2 text-gray-400">{{ __('payment.optimizing') }}</p>
+</div>
+<!-- Stripe JS -->
+@push('scripts')
+@if($gateway === 'stripe')
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    let stripeCard = null;
+    const stripe = Stripe("{{ config('services.stripe.api_public_key') }}");
 
-        function initializeStripe() {
-            if (stripeCard) {
-                stripeCard.destroy();
-                stripeCard = null;
-            }
-
-            if (!document.getElementById('card-element')) {
-                return;
-            }
-
-            const elements = stripe.elements();
-            const style = {
-                base: {
-                    color: '#ffffffff',
-                    fontFamily: '"Urbanist", sans-serif',
-                    fontSmoothing: 'antialiased',
-                    fontSize: '16px',
-                    '::placeholder': {
-                        color: '#868686ff'
-                    }
-                },
-                invalid: {
-                    color: '#fa755a',
-                    iconColor: '#fa755a'
-                }
-            };
-            stripeCard = elements.create('card', {
-                style: style,
-                hidePostalCode: true
-            });
-
-            stripeCard.mount('#card-element');
-
-            stripeCard.on('change', async (event) => {
-                const displayError = document.getElementById('card-errors');
-                if (event.error) {
-                    displayError.textContent = event.error.message;
-                } else {
-                    displayError.textContent = '';
-                }
-
-                if (event.complete) {
-                    const { error, paymentMethod } = await stripe.createPaymentMethod({
-                        type: 'card',
-                        card: stripeCard,
-                        billing_details: {
-                            name: document.querySelector('input[name="card_name"]').value,
-                            email: document.querySelector('input[name="email"]').value,
-                            phone: document.querySelector('input[name="phone"]').value,
-                        },
-                    });
-
-                    if (error) {
-                        displayError.textContent = error.message;
-                    } else {
-                        @this.set('paymentMethodId', paymentMethod.id);
-                    }
-                }
-            });
+    function initializeStripe() {
+        if (stripeCard) {
+            stripeCard.destroy();
+            stripeCard = null;
         }
 
-        document.addEventListener('livewire:init', () => {
+        if (!document.getElementById('card-element')) {
+            return;
+        }
+
+        const elements = stripe.elements();
+        const style = {
+            base: {
+                color: '#ffffffff',
+                fontFamily: '"Urbanist", sans-serif',
+                fontSmoothing: 'antialiased',
+                fontSize: '16px',
+                '::placeholder': {
+                    color: '#868686ff'
+                }
+            },
+            invalid: {
+                color: '#fa755a',
+                iconColor: '#fa755a'
+            }
+        };
+        stripeCard = elements.create('card', {
+            style: style,
+            hidePostalCode: true
+        });
+
+        stripeCard.mount('#card-element');
+
+        stripeCard.on('change', async (event) => {
+            const displayError = document.getElementById('card-errors');
+            if (event.error) {
+                displayError.textContent = event.error.message;
+            } else {
+                displayError.textContent = '';
+            }
+
+            if (event.complete) {
+                const { error, paymentMethod } = await stripe.createPaymentMethod({
+                    type: 'card',
+                    card: stripeCard,
+                    billing_details: {
+                        name: document.querySelector('input[name="card_name"]').value,
+                        email: document.querySelector('input[name="email"]').value,
+                        phone: document.querySelector('input[name="phone"]').value,
+                    },
+                });
+
+                if (error) {
+                    displayError.textContent = error.message;
+                } else {
+                    @this.set('paymentMethodId', paymentMethod.id);
+                }
+            }
+        });
+    }
+
+    document.addEventListener('livewire:init', () => {
+        initializeStripe();
+
+        Livewire.hook('message.processed', (message, component) => {
             initializeStripe();
-
-            Livewire.hook('message.processed', (message, component) => {
-                initializeStripe();
-            });
-
-            Livewire.on('checkout-success', (event) => {
-                const purchaseData = event.purchaseData;
-                if (typeof fbq === 'function') {
-                    fbq('track', 'Purchase', {
-                        value: purchaseData.value,
-                        currency: purchaseData.currency,
-                        content_ids: purchaseData.content_ids,
-                        content_type: purchaseData.content_type,
-                        transaction_id: purchaseData.transaction_id
-                    });
-                }
-            });
-
-            Livewire.on('validation:failed', () => {
-                const paymentSection = document.getElementById('payment-method-section');
-                if (paymentSection) {
-                    paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
         });
 
-        window.addEventListener('redirectToExternal', event => {
-            window.location.href = event.detail.url;
+        Livewire.on('checkout-success', (event) => {
+            const purchaseData = event.purchaseData;
+            if (typeof fbq === 'function') {
+                fbq('track', 'Purchase', {
+                    value: purchaseData.value,
+                    currency: purchaseData.currency,
+                    content_ids: purchaseData.content_ids,
+                    content_type: purchaseData.content_type,
+                    transaction_id: purchaseData.transaction_id
+                });
+            }
         });
-    </script>
-    @endif
-    @endpush
-    </div>
+
+        Livewire.on('validation:failed', () => {
+            const paymentSection = document.getElementById('payment-method-section');
+            if (paymentSection) {
+                paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+
+    window.addEventListener('redirectToExternal', event => {
+        window.location.href = event.detail.url;
+    });
+</script>
+@endif
+@endpush
+</div>

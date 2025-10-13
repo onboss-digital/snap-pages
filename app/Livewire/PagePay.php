@@ -17,6 +17,11 @@ class PagePay extends Component
         $plans, $modalData, $product, $testimonials = [],
         $utm_source, $utm_medium, $utm_campaign, $utm_id, $utm_term, $utm_content;
 
+    // ===== NOVAS PROPRIEDADES PARA PIX =====
+    public $selectedPaymentMethod = 'credit_card'; // 'credit_card' ou 'pix'
+    public $pixData = null; // Dados do PIX (QR Code, brCode, etc)
+    public $pixStatus = null; // Status do pagamento PIX (PENDING, PAID, EXPIRED, FAILED)
+
     // Modais
     public $showSuccessModal = false;
     public $showErrorModal = false;
@@ -279,6 +284,15 @@ class PagePay extends Component
             $this->showSecure = true;
             $this->showLodingModal = true;
 
+            // ===== FLUXO PIX: SEM UPSELL/DOWNSELL =====
+            if ($this->selectedPaymentMethod === 'pix') {
+                $this->showProcessingModal = true;
+                $this->sendCheckout();
+                $this->showLodingModal = false;
+                return;
+            }
+
+            // ===== FLUXO CARTÃO: COM UPSELL/DOWNSELL (ORIGINAL) =====
             switch ($this->selectedPlan) {
                 case 'monthly':
                 case 'quarterly':
@@ -356,6 +370,27 @@ class PagePay extends Component
         $this->paymentGateway = PaymentGatewayFactory::create();
         $response = $this->paymentGateway->processPayment($checkoutData);
 
+        // ===== FLUXO PIX =====
+        if ($this->selectedPaymentMethod === 'pix') {
+            if ($response['status'] === 'success') {
+                $this->pixData = $response['data'];
+                $this->pixStatus = $response['data']['status'] ?? 'PENDING';
+                $this->showProcessingModal = false;
+                
+                Log::channel('payment_checkout')->info('PIX criado', [
+                    'pix_id' => $this->pixData['pix_id'],
+                ]);
+            } else {
+                $this->showProcessingModal = false;
+                $this->showErrorModal = true;
+                $this->modalData = [
+                    'message' => $response['message'] ?? 'Erro ao gerar PIX.',
+                ];
+            }
+            return;
+        }
+
+        // ===== FLUXO CARTÃO (ORIGINAL) =====
         if ($response['status'] === 'success') {
             Log::channel('payment_checkout')->info('PagePay: Payment successful via gateway.', [
                 'gateway' => get_class($this->paymentGateway),
@@ -456,12 +491,23 @@ class PagePay extends Component
             $customerData['document'] = preg_replace('/\D/', '', $this->cpf);
         }
 
+        $cardDetails = [
+            'number' => $this->cardNumber,
+            'holder_name' => $this->cardName,
+            'exp_month' => $expMonth,
+            'exp_year' => $expYear,
+            'cvv' => $this->cardCvv,
+        ];
+        if ($this->selectedLanguage === 'br' && $this->cpf) {
+            $cardDetails['document'] = preg_replace('/\D/', '', $this->cpf);
+        }
+
         $baseData = [
             'amount' => (int)round($numeric_final_price * 100),
             'currency_code' => $this->selectedCurrency,
             'offer_hash' => $currentPlanDetails['hash'],
             'upsell_url' => $currentPlanDetails['upsell_url'] ?? null,
-            'payment_method' => 'credit_card',
+            'payment_method' => $this->selectedPaymentMethod,
             'customer' => $customerData,
             'cart' => $cartItems,
             'installments' => 1,
@@ -479,18 +525,13 @@ class PagePay extends Component
             ]
         ];
 
-        $cardDetails = [
-            'number' => $this->cardNumber,
-            'holder_name' => $this->cardName,
-            'exp_month' => $expMonth,
-            'exp_year' => $expYear,
-            'cvv' => $this->cardCvv,
-        ];
-        if ($this->selectedLanguage === 'br' && $this->cpf) {
-            $cardDetails['document'] = preg_replace('/\D/', '', $this->cpf);
+        // ===== ADICIONAR DADOS ESPECÍFICOS DO MÉTODO DE PAGAMENTO =====
+        if ($this->selectedPaymentMethod === 'credit_card') {
+            $baseData['payment_method_id'] = $this->paymentMethodId;
+            $baseData['card'] = $cardDetails;
+        } elseif ($this->selectedPaymentMethod === 'pix') {
+            $baseData['expiresIn'] = config('services.abacatepay.pix_expiration', 1800);
         }
-        $baseData['payment_method_id'] = $this->paymentMethodId;
-        $baseData['card'] = $cardDetails;
 
         return $baseData;
     }
@@ -544,7 +585,16 @@ class PagePay extends Component
             $this->selectedCurrency = $lang === 'br' ? 'BRL'
                 : ($lang === 'en' ? 'USD'
                     : ($lang === 'es' ? 'EUR' : 'BRL'));
-            $this->plans = $this->getPlans();
+            
+            // ===== RESETAR PARA CARTÃO SE NÃO FOR BRASIL =====
+            if ($lang !== 'br' && $this->selectedPaymentMethod === 'pix') {
+                $this->selectedPaymentMethod = 'credit_card';
+                $this->pixData = null;
+                $this->pixStatus = null;
+            }
+            
+            // Recalculate plans and totals as language might affect labels (though prices should be language-agnostic)
+            $this->plans = $this->getPlans(); // Re-fetch plans to update labels
             $this->testimonials = trans('checkout.testimonials');
             $this->calculateTotals();
             $this->dispatch('languageChanged');
@@ -580,6 +630,33 @@ class PagePay extends Component
         }
 
         $this->changeLanguage($this->selectedLanguage);
+    }
+
+    // ===== MÉTODO PARA VERIFICAR STATUS DO PIX (POLLING) =====
+    public function checkPixStatus()
+    {
+        if (!$this->pixData || !isset($this->pixData['pix_id'])) {
+            return;
+        }
+
+        try {
+            $pixGateway = PaymentGatewayFactory::create('abacatepay');
+            $response = $pixGateway->checkPaymentStatus($this->pixData['pix_id']);
+
+            if ($response['status'] === 'success') {
+                $this->pixStatus = $response['data']['status'];
+
+                if ($this->pixStatus === 'PAID') {
+                    // Redirecionar para página de obrigado
+                    return redirect()->to('https://web.snaphubb.online/obg/');
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Erro ao verificar status do PIX', [
+                'pix_id' => $this->pixData['pix_id'],
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function render()
