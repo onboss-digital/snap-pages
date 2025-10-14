@@ -361,7 +361,8 @@ class PagePay extends Component
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->showProcessingModal = false; // Hide modal on validation failure
             $this->dispatch('validation:failed');
-            throw $e;
+            // Do not re-throw the exception to let Livewire handle the validation messages
+            return;
         }
 
         try {
@@ -430,9 +431,22 @@ class PagePay extends Component
         $this->paymentGateway = PaymentGatewayFactory::create();
         $response = $this->paymentGateway->processPayment($checkoutData);
 
+use App\Models\Order; // Assuming Order model exists
+
+// ... inside PagePay class
+
         // ===== FLUXO PIX =====
         if ($this->selectedPaymentMethod === 'pix') {
             if ($response['status'] === 'success') {
+                // Find the order using the externalId from metadata
+                $order = Order::find($checkoutData['metadata']['externalId']);
+                if ($order) {
+                    $order->payment_details()->create([
+                        'gateway_id' => $response['data']['pix_id'],
+                        'status' => $response['data']['status'],
+                    ]);
+                }
+
                 $this->pixData = $response['data'];
                 $this->pixStatus = $response['data']['status'] ?? 'PENDING';
                 $this->showProcessingModal = false;
@@ -440,6 +454,7 @@ class PagePay extends Component
                 
                 Log::channel('payment_checkout')->info('PIX criado', [
                     'pix_id' => $this->pixData['pix_id'],
+                    'order_id' => $order ? $order->id : null,
                 ]);
             } else {
                 $this->showProcessingModal = false;
@@ -550,8 +565,21 @@ class PagePay extends Component
             }
         }
 
+use App\Models\Order; // Assuming Order model exists
+
+// ... inside PagePay class
+
         // customer
         if ($this->selectedPaymentMethod === 'pix') {
+            // Create Order before sending to gateway
+            $order = Order::create([
+                'user_id' => auth()->id(), // or null if guest
+                'plan' => $this->selectedPlan,
+                'amount' => floatval(str_replace(',', '.', str_replace('.', '', $this->totals['final_price']))),
+                'status' => 'pending',
+                'payment_gateway' => 'abacatepay',
+            ]);
+
             $customerData = [
                 'name' => $this->pixName,
                 'email' => $this->pixEmail,
@@ -560,6 +588,10 @@ class PagePay extends Component
             if ($this->selectedLanguage === 'br' && $this->pixCpf) {
                 $customerData['document'] = preg_replace('/\D/', '', $this->pixCpf);
             }
+
+            // Add externalId to metadata
+            $baseData['metadata']['externalId'] = $order->id;
+
         } else {
             $customerData = [
                 'name' => $this->cardName,

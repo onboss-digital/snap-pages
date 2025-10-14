@@ -15,12 +15,17 @@ O fluxo de pagamento foi projetado para ser intuitivo e claro para o usuário:
     *   Abaixo do resumo, um formulário solicita os dados necessários para a transação PIX: **Nome Completo**, **E-mail**, **Telefone** e **CPF**. Esses campos são independentes dos campos do formulário de cartão de crédito.
 4.  **Geração do QR Code**:
     *   Ao clicar no botão "GERAR PIX", o sistema valida os dados do formulário. Um indicador de "processando" é exibido imediatamente para dar feedback ao usuário.
-    *   Com os dados validados, o sistema faz uma chamada à API da Abacate Pay para criar a cobrança PIX.
+    *   Com os dados validados, o sistema cria um novo pedido no banco de dados com o status `pending`.
+    *   Em seguida, faz uma chamada à API da Abacate Pay para criar a cobrança PIX, enviando o ID do pedido interno no `metadata.externalId`.
     *   O conteúdo do modal é então substituído para exibir o **QR Code**, o código **"copia e cola"** e o **tempo de expiração** da cobrança.
 5.  **Confirmação de Pagamento e Redirecionamento**:
     *   Enquanto o QR Code está visível, o sistema inicia um processo de verificação (polling) em segundo plano, consultando a API da Abacate Pay a cada poucos segundos para saber o status do pagamento.
     *   Quando o pagamento é confirmado (`PAID`), o usuário é **automaticamente redirecionado** para a página de sucesso.
     *   Se o pagamento falhar ou expirar (`FAILED` ou `EXPIRED`), o usuário é redirecionado para uma página de falha.
+6.  **Webhook (Notificação Automática)**:
+    *   Paralelamente ao polling, o sistema está preparado para receber notificações automáticas (webhooks) da Abacate Pay.
+    *   Quando a Abacate Pay confirma um pagamento, ela envia uma notificação para o endpoint `POST /webhooks/abacatepay`.
+    *   O sistema recebe esta notificação, valida-a e atualiza o status do pedido no banco de dados para `paid`.
 
 ---
 
@@ -53,7 +58,7 @@ Verifique se o arquivo `config/services.php` está configurado para ler as vari�
 
 'abacatepay' => [
     'api_key' => env('ABACATEPAY_API_KEY'),
-    'api_url' => env('ABacatePAY_API_URL', 'https://api.abacatepay.com/v1'),
+    'api_url' => env('ABACATEPAY_API_URL', 'https://api.abacatepay.com/v1'),
     'pix_expiration' => env('ABACATEPAY_PIX_EXPIRATION', 1800),
 ],
 ```
@@ -90,6 +95,14 @@ document.addEventListener('livewire:init', () => {
     });
 });
 ```
+
+### 4. Endpoint de Webhook
+
+A rota do webhook está definida em `routes/web.php` e aponta para `AbacatePayWebhookController`. Para a implementação completa, você precisará:
+
+1.  **Configurar a URL no Painel da Abacate Pay**: Aponte o webhook para `https://seusite.com/webhooks/abacatepay`.
+2.  **Implementar a Lógica de Validação**: No `AbacatePayWebhookController`, adicione a lógica para validar o `webhookSecret` e/ou a assinatura HMAC para garantir que as requisições são seguras e legítimas.
+3.  **Processar o Pedido**: Desenvolva a lógica para encontrar o pedido no banco de dados usando o `externalId` e atualizar seu status para `paid`.
 
 ---
 
