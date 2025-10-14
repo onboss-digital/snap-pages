@@ -281,7 +281,7 @@ window.addEventListener('beforeunload', function() {
         {{-- Card PIX (só para Brasil) --}}
         @if($selectedLanguage === 'br')
         <div
-            wire:click="$set('selectedPaymentMethod', 'pix')"
+            wire:click="openPixModal"
             class="payment-method-card cursor-pointer p-6 rounded-lg border-2 transition-all duration-300
                 {{ $selectedPaymentMethod === 'pix' ? 'border-green-500 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:border-gray-600' }}"
         >
@@ -904,6 +904,73 @@ window.addEventListener('beforeunload', function() {
     </svg>
     <p class="text-lg">{{ __('payment.customizing') }}</p>
     <p class="text-sm mt-2 text-gray-400">{{ __('payment.optimizing') }}</p>
+</div>
+
+<!-- PIX Modal -->
+<div id="pix-modal"
+    class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 @if (!$showPixModal) hidden @endif">
+    <div class="bg-[#1F1F1F] rounded-xl max-w-md w-full mx-4 p-6 relative">
+        <button wire:click="closeModal" class="absolute top-3 right-3 text-gray-400 hover:text-white">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        @if (!$pixData)
+            <div class="text-center mb-4">
+                <h3 class="text-2xl font-bold text-white">Pagamento com PIX</h3>
+                <p class="text-gray-300 mt-2">Preencha seus dados para gerar o código PIX.</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.your_name') }}</label>
+                    <input name="pix_name" type="text"
+                        placeholder="{{ __('payment.your_name_placeholder') }}" wire:model.defer="cardName"
+                        class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
+                    @error('cardName')
+                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">E-mail</label>
+                    <input name="pix_email" type="email"
+                        placeholder="seu@email.com" wire:model.defer="email"
+                        class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
+                    @error('email')
+                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
+                    <input name="pix_phone" type="tel"
+                        placeholder="+55 (11) 99999-9999" wire:model.defer="phone"
+                        class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
+                    @error('phone')
+                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">CPF (obrigatório para pagamentos no Brasil)</label>
+                    <input name="pix_cpf" type="text" x-mask="999.999.999-99"
+                        placeholder="000.000.000-00" wire:model.defer="cpf"
+                        class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
+                    @error('cpf')
+                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+                <button wire:click="startCheckout"
+                    class="w-full bg-green-600 hover:bg-green-500 text-white py-3 text-lg font-bold rounded-xl transition-all block cursor-pointer transform hover:scale-105">
+                    GERAR PIX
+                </button>
+                <button wire:click="switchToCard"
+                    class="w-full bg-gray-600 hover:bg-gray-500 text-white py-2 text-sm font-bold rounded-xl transition-all block cursor-pointer mt-2">
+                    Pagar com Cartão
+                </button>
+            </div>
+        @else
+            <x-pix-card :pixData="$pixData" :pixStatus="$pixStatus" :expiresAt="$pixData['expires_at'] ?? null" />
+        @endif
+    </div>
 </div>
 <!-- Stripe JS -->
 @push('scripts')

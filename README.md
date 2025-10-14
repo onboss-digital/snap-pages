@@ -117,40 +117,6 @@ Este documento detalha a implementação da funcionalidade de pagamento PIX util
 
 ## Arquivos Criados
 
-- : Este arquivo contém a lógica de integração com a API da Abacate Pay. Ele é responsável por criar a cobrança PIX e verificar o status do pagamento.
-
-## Arquivos Modificados
-
-- : Este arquivo foi modificado para incluir a  como um gateway de pagamento disponível.
-- : O componente Livewire foi atualizado para manipular o fluxo de pagamento PIX. As principais alterações incluem:
-    - Despachar eventos Livewire (, , ) para o front-end.
-    - Chamar o  para criar cobranças PIX e verificar o status do pagamento.
-- : O arquivo de visualização foi atualizado para incluir o polling de JavaScript para o status do PIX.
-
-## Configuração de Produção
-
-Para configurar o ambiente de produção, os seguintes arquivos precisam ser atualizados:
-
-- :
-    - : Defina para sua chave de API de produção da Abacate Pay.
-    - : Defina para o URL da API de produção da Abacate Pay.
-    - : Defina como  se o PIX for o método de pagamento padrão.
-- :
-    - Configure as credenciais da Abacate Pay no array .
-
-
-
-- :
-    - Atualize os URLs de redirecionamento para  e  para seus URLs de produção.
-
-
-
-# Implementação de Pagamento PIX com Abacate Pay
-
-Este documento detalha a implementação da funcionalidade de pagamento PIX utilizando a Abacate Pay.
-
-## Arquivos Criados
-
 - `app/Services/PaymentGateways/AbacatePayGateway.php`: Este arquivo contém a lógica de integração com a API da Abacate Pay. Ele é responsável por criar a cobrança PIX e verificar o status do pagamento.
 
 ## Arquivos Modificados
