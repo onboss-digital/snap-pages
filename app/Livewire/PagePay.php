@@ -9,6 +9,7 @@ use GuzzleHttp\Psr7\Request;
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
+use App\Models\Order;
 
 class PagePay extends Component
 {
@@ -431,10 +432,6 @@ class PagePay extends Component
         $this->paymentGateway = PaymentGatewayFactory::create();
         $response = $this->paymentGateway->processPayment($checkoutData);
 
-use App\Models\Order; // Assuming Order model exists
-
-// ... inside PagePay class
-
         // ===== FLUXO PIX =====
         if ($this->selectedPaymentMethod === 'pix') {
             if ($response['status'] === 'success') {
@@ -564,10 +561,6 @@ use App\Models\Order; // Assuming Order model exists
                 ];
             }
         }
-
-use App\Models\Order; // Assuming Order model exists
-
-// ... inside PagePay class
 
         // customer
         if ($this->selectedPaymentMethod === 'pix') {
