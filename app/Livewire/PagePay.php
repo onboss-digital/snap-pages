@@ -366,58 +366,25 @@ class PagePay extends Component
 
         try {
             $this->showSecure = true;
-            $this->showLodingModal = true; // Assuming "Loding" is intended
+            $this->showLodingModal = true;
 
-            // ===== FLUXO PIX: SEM UPSELL/DOWNSELL =====
             if ($this->selectedPaymentMethod === 'pix') {
                 $this->sendCheckout();
                 $this->showLodingModal = false;
                 return;
             }
 
-            // ===== FLUXO CARTÃO: COM UPSELL/DOWNSELL (ORIGINAL) =====
-            switch ($this->selectedPlan) {
-                case 'monthly':
-                case 'quarterly':
-                    if (isset($this->plans['semi-annual'])) {
-                        //$this->showUpsellModal = true;
+            // Other payment flows...
+            $this->sendCheckout();
 
-                        $offerValue = round(
-                            $this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price']
-                                / $this->plans['semi-annual']['nunber_months'],
-                            1
-                        );
-
-                        $offerDiscont = (
-                            $this->plans[$this->selectedPlan]['prices'][$this->selectedCurrency]['origin_price']
-                            * $this->plans['semi-annual']['nunber_months']
-                        ) - ($offerValue * $this->plans['semi-annual']['nunber_months']);
-
-                        $this->modalData = [
-                            'actual_month_value'    => $this->totals['month_price_discount'],
-                            'offer_month_value'     => number_format($offerValue, 2, ',', '.'),
-                            'offer_total_discount'  => number_format($offerDiscont, 2, ',', '.'),
-                            'offer_total_value'     => number_format(
-                                $this->plans['semi-annual']['prices'][$this->selectedCurrency]['descont_price'],
-                                2,
-                                ',',
-                                '.'
-                            ),
-                        ];
-                        break; // só interrompe se o semi-annual existir
-                    }
-
-                    // se não tem semi-annual, segue fluxo normal (igual default)
-                    // não dá break aqui
-                default:
-                    $this->showProcessingModal = true;
-                    $this->sendCheckout();
-                    $this->showLodingModal = false;
-                    return;
-            }
         } catch (\Exception $e) {
-            Log::channel('start_checkout')->error('start_checkout: API Error:', [
+            $this->showProcessingModal = false;
+            $this->showLodingModal = false;
+            $this->showErrorModal = true;
+
+            Log::channel('start_checkout')->error('start_checkout: Unhandled Exception:', [
                 'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
 

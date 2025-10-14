@@ -53,7 +53,7 @@ Verifique se o arquivo `config/services.php` estÃ¡ configurado para ler as variÃ
 
 'abacatepay' => [
     'api_key' => env('ABACATEPAY_API_KEY'),
-    'api_url' => env('ABACATEPAY_API_URL', 'https://api.abacatepay.com/v1'),
+    'api_url' => env('ABacatePAY_API_URL', 'https://api.abacatepay.com/v1'),
     'pix_expiration' => env('ABACATEPAY_PIX_EXPIRATION', 1800),
 ],
 ```

@@ -75,9 +75,11 @@ class AbacatePayGateway implements PaymentGatewayInterface
             }
         } catch (GuzzleException $e) {
             Log::channel('payment_checkout')->error('AbacatePay API communication error', [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'request_body' => $payload,
+                'trace' => $e->getTraceAsString(),
             ]);
-            return ['status' => 'error', 'message' => 'Could not connect to payment gateway.'];
+            return ['status' => 'error', 'message' => 'Could not connect to the payment gateway. Please try again later.'];
         }
     }
 
