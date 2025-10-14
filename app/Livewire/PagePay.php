@@ -133,6 +133,12 @@ class PagePay extends Component
         $this->phone = '+5511999999999'; // Example phone number
         $this->cpf = '123.456.789-09'; // Example CPF, valid format        
         $this->paymentMethodId = 'pm_1SBQpKIVhGS3bBwFk2Idz2kp'; //'pm_1S5yVwIVhGS3bBwFlcYLzD5X'; //adicione um metodo de pagamento pra testar capture no elements do stripe
+
+        // Populate PIX fields for debugging
+        $this->pixName = 'Maria da Silva';
+        $this->pixEmail = 'maria@silva.com';
+        $this->pixPhone = '+5511988888888';
+        $this->pixCpf = '987.654.321-01';
     }
 
     public function mount(PaymentGatewayInterface $paymentGateway = null) // Modified to allow injection, or resolve via factory
@@ -348,10 +354,12 @@ class PagePay extends Component
         }
 
 
+        $this->showProcessingModal = true;
+
         try {
             $this->validate();
-
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->showProcessingModal = false; // Hide modal on validation failure
             $this->dispatch('validation:failed');
             throw $e;
         }
@@ -362,7 +370,6 @@ class PagePay extends Component
 
             // ===== FLUXO PIX: SEM UPSELL/DOWNSELL =====
             if ($this->selectedPaymentMethod === 'pix') {
-                $this->showProcessingModal = true;
                 $this->sendCheckout();
                 $this->showLodingModal = false;
                 return;
