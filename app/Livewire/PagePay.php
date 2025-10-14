@@ -188,33 +188,26 @@ class PagePay extends Component
 
     public function getPlans()
     {
-        $headers = [
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/json'
-        ];
+        $localPlans = config('plans');
+        $formattedPlans = [];
 
-        $request = new Request(
-            'GET',
-            $this->apiUrl . '/get-plans',
-            $headers,
-        );
-        return $this->httpClient->sendAsync($request)
-            ->then(function ($res) {
-                $responseBody = $res->getBody()->getContents();
-                $dataResponse = json_decode($responseBody, true);
-                $this->paymentGateway = PaymentGatewayFactory::create();
-                $result = $this->paymentGateway->formatPlans($dataResponse, $this->selectedCurrency);
-                $this->bumps = $result[$this->selectedPlan]['order_bumps'];
-                return $result;
-            })
-            ->otherwise(function ($e) {
-                \Log::channel('GetPlans')->info('PagePay: GetPlans from streamit.', [
-                    'gateway' => $this->gateway,
-                    'error' => $e->getMessage(),
-                ]);
-                return [];
-            })
-            ->wait();
+        foreach ($localPlans as $key => $plan) {
+            $formattedPlans[$key] = [
+                'hash' => $plan['id'],
+                'label' => $plan['label'],
+                'nunber_months' => 1, // Assuming monthly for now
+                'prices' => [
+                    $this->selectedCurrency => [
+                        'origin_price' => $plan['original_price'] / 100,
+                        'descont_price' => $plan['price'] / 100,
+                    ],
+                ],
+                'order_bumps' => [], // Bumps can be added here if needed
+            ];
+        }
+
+        return $formattedPlans;
+    }
 
         // // Plan hashes might need to be gateway-specific or mapped
         // return \GuzzleHttp\Promise\promise_for([
@@ -435,15 +428,6 @@ class PagePay extends Component
         // ===== FLUXO PIX =====
         if ($this->selectedPaymentMethod === 'pix') {
             if ($response['status'] === 'success') {
-                // Find the order using the externalId from metadata
-                $order = Order::find($checkoutData['metadata']['externalId']);
-                if ($order) {
-                    $order->payment_details()->create([
-                        'gateway_id' => $response['data']['pix_id'],
-                        'status' => $response['data']['status'],
-                    ]);
-                }
-
                 $this->pixData = $response['data'];
                 $this->pixStatus = $response['data']['status'] ?? 'PENDING';
                 $this->showProcessingModal = false;
@@ -451,7 +435,6 @@ class PagePay extends Component
                 
                 Log::channel('payment_checkout')->info('PIX criado', [
                     'pix_id' => $this->pixData['pix_id'],
-                    'order_id' => $order ? $order->id : null,
                 ]);
             } else {
                 $this->showProcessingModal = false;
@@ -564,15 +547,6 @@ class PagePay extends Component
 
         // customer
         if ($this->selectedPaymentMethod === 'pix') {
-            // Create Order before sending to gateway
-            $order = Order::create([
-                'user_id' => auth()->id(), // or null if guest
-                'plan' => $this->selectedPlan,
-                'amount' => floatval(str_replace(',', '.', str_replace('.', '', $this->totals['final_price']))),
-                'status' => 'pending',
-                'payment_gateway' => 'abacatepay',
-            ]);
-
             $customerData = [
                 'name' => $this->pixName,
                 'email' => $this->pixEmail,
@@ -581,10 +555,6 @@ class PagePay extends Component
             if ($this->selectedLanguage === 'br' && $this->pixCpf) {
                 $customerData['document'] = preg_replace('/\D/', '', $this->pixCpf);
             }
-
-            // Add externalId to metadata
-            $baseData['metadata']['externalId'] = $order->id;
-
         } else {
             $customerData = [
                 'name' => $this->cardName,

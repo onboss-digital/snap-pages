@@ -2,56 +2,72 @@
 
 ## Visão Geral
 
-Este documento detalha a implementação da funcionalidade de pagamento PIX no checkout, utilizando a **Abacate Pay** como provedor. O objetivo foi criar uma experiência de pagamento fluida, independente e totalmente funcional, desde a seleção do método de pagamento até a confirmação e redirecionamento do usuário.
+Este documento detalha a implementação da funcionalidade de pagamento PIX no checkout, utilizando a **Abacate Pay** como provedor. O objetivo foi criar uma experiência de pagamento fluida e totalmente independente de serviços externos para a lógica de preços.
 
 ## Como a Funcionalidade Opera
 
 O fluxo de pagamento foi projetado para ser intuitivo e claro para o usuário:
 
 1.  **Seleção do Método de Pagamento**: Na página de checkout, o usuário verá duas opções de pagamento: "Cartão" e "PIX".
-2.  **Abertura do Modal PIX**: Ao clicar no card "PIX", um modal independente é aberto, escurecendo o fundo da página para focar a atenção do usuário.
+2.  **Abertura do Modal PIX**: Ao clicar no card "PIX", um modal independente é aberto.
 3.  **Resumo do Pedido e Formulário**:
-    *   O topo do modal exibe um **resumo claro do pedido**, incluindo o nome do produto, o plano selecionado, o valor original, os descontos aplicados e o valor final a ser pago.
-    *   Abaixo do resumo, um formulário solicita os dados necessários para a transação PIX: **Nome Completo**, **E-mail**, **Telefone** e **CPF**. Esses campos são independentes dos campos do formulário de cartão de crédito.
+    *   O topo do modal exibe um **resumo claro do pedido**. As informações de preço (valor, descontos, etc.) são lidas de um arquivo de configuração local (`config/plans.php`).
+    *   Abaixo do resumo, um formulário solicita os dados necessários para a transação PIX: **Nome Completo**, **E-mail**, **Telefone** e **CPF**.
 4.  **Geração do QR Code**:
-    *   Ao clicar no botão "GERAR PIX", o sistema valida os dados do formulário. Um indicador de "processando" é exibido imediatamente para dar feedback ao usuário.
-    *   Com os dados validados, o sistema cria um novo pedido no banco de dados com o status `pending`.
-    *   Em seguida, faz uma chamada à API da Abacate Pay para criar a cobrança PIX, enviando o ID do pedido interno no `metadata.externalId`.
-    *   O conteúdo do modal é então substituído para exibir o **QR Code**, o código **"copia e cola"** e o **tempo de expiração** da cobrança.
+    *   Ao clicar em "GERAR PIX", o sistema valida os dados e exibe um indicador de "processando".
+    *   Com os dados validados, o sistema faz uma chamada à API da Abacate Pay, enviando o valor final (lido do arquivo de configuração local) para criar a cobrança PIX.
+    *   O modal é atualizado para exibir o **QR Code**, o código **"copia e cola"** e o **tempo de expiração**.
 5.  **Confirmação de Pagamento e Redirecionamento**:
-    *   Enquanto o QR Code está visível, o sistema inicia um processo de verificação (polling) em segundo plano, consultando a API da Abacate Pay a cada poucos segundos para saber o status do pagamento.
+    *   O sistema verifica o status do pagamento em segundo plano.
     *   Quando o pagamento é confirmado (`PAID`), o usuário é **automaticamente redirecionado** para a página de sucesso.
-    *   Se o pagamento falhar ou expirar (`FAILED` ou `EXPIRED`), o usuário é redirecionado para uma página de falha.
-6.  **Webhook (Notificação Automática)**:
-    *   Paralelamente ao polling, o sistema está preparado para receber notificações automáticas (webhooks) da Abacate Pay.
-    *   Quando a Abacate Pay confirma um pagamento, ela envia uma notificação para o endpoint `POST /webhooks/abacatepay`.
-    *   O sistema recebe esta notificação, valida-a e atualiza o status do pedido no banco de dados para `paid`.
+    *   Em caso de falha ou expiração, o usuário é redirecionado para uma página de falha.
 
 ---
 
-## Configuração para o Ambiente de Produção
+## Configuração do Projeto
 
-Para que a funcionalidade opere corretamente em produção, é crucial configurar as seguintes variáveis e arquivos.
+Para que a funcionalidade opere corretamente, é crucial configurar os seguintes arquivos.
 
-### 1. Variáveis de Ambiente (`.env`)
+### 1. Arquivo de Configuração de Planos (`config/plans.php`)
 
-Adicione as seguintes chaves ao seu arquivo `.env` e preencha com suas credenciais de produção da Abacate Pay.
+Esta é a **fonte da verdade** para os planos e preços. A dependência de APIs externas para preços foi removida para garantir total autonomia.
+
+**Exemplo de configuração para um plano mensal:**
+
+```php
+// Em config/plans.php
+
+return [
+    'monthly' => [
+        'id' => 'prod_1MXtRjLJfwbabM1aYeYtX2h3', // ID do Produto na Abacate Pay (usado para referência interna)
+        'price' => 2490, // Preço final em centavos (ex: R$ 24,90)
+        'label' => 'Plano Mensal',
+        'original_price' => 4990, // Preço original em centavos (usado para mostrar o desconto)
+    ],
+    // Você pode adicionar outros planos aqui no futuro
+];
+```
+
+**Para alterar o preço ou o ID do produto, modifique este arquivo.**
+
+### 2. Variáveis de Ambiente (`.env`)
+
+Adicione as seguintes chaves ao seu arquivo `.env` com as suas credenciais da Abacate Pay.
 
 ```dotenv
 # CHAVE DA API DA ABACATE PAY
-ABACATEPAY_API_KEY=abc_prod_sua_chave_de_producao_aqui
+ABACATEPAY_API_KEY=abc_sua_chave_aqui
 
-# URL DA API (geralmente não muda, mas é bom ter como variável)
+# URL DA API (geralmente não muda)
 ABACATEPAY_API_URL=https://api.abacatepay.com/v1
 
 # TEMPO DE EXPIRAÇÃO DO PIX (em segundos)
-# O padrão é 1800 segundos (30 minutos), mas você pode ajustar conforme necessário.
 ABACATEPAY_PIX_EXPIRATION=1800
 ```
 
-### 2. Configuração de Serviços (`config/services.php`)
+### 3. Configuração de Serviços (`config/services.php`)
 
-Verifique se o arquivo `config/services.php` está configurado para ler as variáveis de ambiente da Abacate Pay. A estrutura deve ser a seguinte:
+Garanta que o arquivo `config/services.php` esteja configurado para ler as variáveis de ambiente da Abacate Pay.
 
 ```php
 // Em config/services.php
@@ -63,47 +79,28 @@ Verifique se o arquivo `config/services.php` está configurado para ler as vari�
 ],
 ```
 
-### 3. URLs de Redirecionamento no JavaScript
+### 4. URLs de Redirecionamento no JavaScript
 
-As URLs para as quais o usuário é redirecionado após o pagamento são definidas no arquivo `resources/views/livewire/page-pay.blade.php`. Você **precisa** alterar as URLs de exemplo para as suas URLs de produção.
-
-Localize o seguinte trecho de código JavaScript no arquivo:
+As URLs de redirecionamento (sucesso/falha) após o pagamento são definidas no arquivo `resources/views/livewire/page-pay.blade.php`. **Você precisa alterar estas URLs para as suas URLs de produção.**
 
 ```javascript
-document.addEventListener('livewire:init', () => {
-    // ... outros listeners
+// Em resources/views/livewire/page-pay.blade.php
 
-    Livewire.on('pix-paid', () => {
-        console.log('PIX pago! Redirecionando...');
-        stopPixPolling();
-        // 👇 ALTERE A URL ABAIXO PARA SUA PÁGINA DE SUCESSO
-        window.location.href = 'https://seusite.com/obrigado';
-    });
+Livewire.on('pix-paid', () => {
+    // 👇 ALTERE A URL ABAIXO
+    window.location.href = 'https://seusite.com/obrigado';
+});
 
-    Livewire.on('pix-failed', () => {
-        console.log('PIX falhou! Redirecionando...');
-        stopPixPolling();
-        // 👇 ALTERE A URL ABAIXO PARA SUA PÁGINA DE FALHA
-        window.location.href = 'https://seusite.com/falha-no-pagamento';
-    });
+Livewire.on('pix-failed', () => {
+    // 👇 ALTERE A URL ABAIXO
+    window.location.href = 'https://seusite.com/falha-no-pagamento';
+});
 
-    Livewire.on('pix-expired', () => {
-        console.log('PIX expirou! Redirecionando...');
-        stopPixPolling();
-        // 👇 ALTERE A URL ABAIXO PARA SUA PÁGINA DE FALHA
-        window.location.href = 'https://seusite.com/falha-no-pagamento';
-    });
+Livewire.on('pix-expired', () => {
+    // 👇 ALTERE A URL ABAIXO
+    window.location.href = 'https://seusite.com/falha-no-pagamento';
 });
 ```
-
-### 4. Endpoint de Webhook
-
-A rota do webhook está definida em `routes/web.php` e aponta para `AbacatePayWebhookController`. Para a implementação completa, você precisará:
-
-1.  **Configurar a URL no Painel da Abacate Pay**: Aponte o webhook para `https://seusite.com/webhooks/abacatepay`.
-2.  **Implementar a Lógica de Validação**: No `AbacatePayWebhookController`, adicione a lógica para validar o `webhookSecret` e/ou a assinatura HMAC para garantir que as requisições são seguras e legítimas.
-3.  **Processar o Pedido**: Desenvolva a lógica para encontrar o pedido no banco de dados usando o `externalId` e atualizar seu status para `paid`.
-
 ---
 
-Com essas configurações, a integração com a Abacate Pay estará pronta para funcionar em seu ambiente de produção.
+Com essas configurações, a integração está completa, funcional e totalmente independente para a gestão de preços.
