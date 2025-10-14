@@ -123,23 +123,23 @@ document.addEventListener('livewire:init', () => {
         console.log('PIX gerado, iniciando polling...');
         startPixPolling();
     });
-    
+
     Livewire.on('pix-paid', () => {
         console.log('PIX pago! Redirecionando...');
         stopPixPolling();
-        window.location.href = 'https://web.snaphubb.online/obg-br/';
+        window.location.href = 'SEU_URL_DE_SUCESSO_AQUI'; // Substituir pelo URL de produção
     });
-    
+
     Livewire.on('pix-failed', () => {
         console.log('PIX falhou! Redirecionando...');
         stopPixPolling();
-        window.location.href = 'https://web.snaphubb.online/fail-br';
+        window.location.href = 'SEU_URL_DE_FALHA_AQUI'; // Substituir pelo URL de produção
     });
-    
+
     Livewire.on('pix-expired', () => {
         console.log('PIX expirou! Redirecionando...');
         stopPixPolling();
-        window.location.href = 'https://web.snaphubb.online/fail-br';
+        window.location.href = 'SEU_URL_DE_FALHA_AQUI'; // Substituir pelo URL de produção
     });
 });
 
@@ -921,40 +921,64 @@ window.addEventListener('beforeunload', function() {
                 <h3 class="text-2xl font-bold text-white">Pagamento com PIX</h3>
                 <p class="text-gray-300 mt-2">Preencha seus dados para gerar o código PIX.</p>
             </div>
+            <!-- Order Summary -->
+            <div class="bg-gray-800 rounded-lg p-4 mb-4">
+                <div class="flex items-center">
+                    <img src="{{ asset('imgs/logo.png') }}" alt="Produto" class="w-16 h-16 rounded-lg mr-4">
+                    <div>
+                        <h4 class="text-white font-semibold">{{ $product['title'] }}</h4>
+                        <p class="text-gray-400 text-sm">Plano {{ $plans[$selectedPlan]['label'] }}</p>
+                    </div>
+                </div>
+                <div class="border-t border-gray-700 pt-3 mt-3">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>Preço Original</span>
+                        <del class="text-gray-400">{{ $currencies[$selectedCurrency]['symbol'] }} {{ $totals['total_price'] }}</del>
+                    </div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>Desconto</span>
+                        <span class="text-green-400">{{ $currencies[$selectedCurrency]['symbol'] }} {{ $totals['total_discount'] }}</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-bold mt-2">
+                        <span>Total a Pagar</span>
+                        <span>{{ $currencies[$selectedCurrency]['symbol'] }} {{ $totals['final_price'] }}</span>
+                    </div>
+                </div>
+            </div>
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.your_name') }}</label>
                     <input name="pix_name" type="text"
-                        placeholder="{{ __('payment.your_name_placeholder') }}" wire:model.defer="cardName"
+                        placeholder="{{ __('payment.your_name_placeholder') }}" wire:model.defer="pixName"
                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
-                    @error('cardName')
+                    @error('pixName')
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-1">E-mail</label>
                     <input name="pix_email" type="email"
-                        placeholder="seu@email.com" wire:model.defer="email"
+                        placeholder="seu@email.com" wire:model.defer="pixEmail"
                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
-                    @error('email')
+                    @error('pixEmail')
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
                     <input name="pix_phone" type="tel"
-                        placeholder="+55 (11) 99999-9999" wire:model.defer="phone"
+                        placeholder="+55 (11) 99999-9999" wire:model.defer="pixPhone"
                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
-                    @error('phone')
+                    @error('pixPhone')
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-1">CPF (obrigatório para pagamentos no Brasil)</label>
                     <input name="pix_cpf" type="text" x-mask="999.999.999-99"
-                        placeholder="000.000.000-00" wire:model.defer="cpf"
+                        placeholder="000.000.000-00" wire:model.defer="pixCpf"
                         class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
-                    @error('cpf')
+                    @error('pixCpf')
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>

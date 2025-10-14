@@ -15,7 +15,8 @@ class PagePay extends Component
 
     public $paymentMethodId, $cardName, $cardNumber, $cardExpiry, $cardCvv, $email, $phone, $cpf,
         $plans, $modalData, $product, $testimonials = [],
-        $utm_source, $utm_medium, $utm_campaign, $utm_id, $utm_term, $utm_content;
+        $utm_source, $utm_medium, $utm_campaign, $utm_id, $utm_term, $utm_content,
+        $pixName, $pixEmail, $pixCpf, $pixPhone;
 
     // ===== NOVAS PROPRIEDADES PARA PIX =====
     public $selectedPaymentMethod = 'credit_card'; // 'credit_card' ou 'pix'
@@ -89,22 +90,33 @@ class PagePay extends Component
 
     protected function rules()
     {
-        $rules = [
-            'cardName' => 'required|string|max:255',
-            'email' => 'required|email',
-            'phone' => ['nullable', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
-        ];
+        $rules = [];
 
-        if ($this->selectedLanguage === 'br') {
-            $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
-        }
-
-        // ===== VALIDAÇÃO CONDICIONAL BASEADA NO MÉTODO DE PAGAMENTO =====
         if ($this->selectedPaymentMethod === 'credit_card') {
+            $rules = [
+                'cardName' => 'required|string|max:255',
+                'email' => 'required|email',
+                'phone' => ['nullable', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
+            ];
+
+            if ($this->selectedLanguage === 'br') {
+                $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
+            }
+
             if ($this->gateway !== 'stripe') {
                 $rules['cardNumber'] = 'required|numeric|digits_between:13,19';
                 $rules['cardExpiry'] = ['required', 'string', 'regex:/^(0[1-9]|1[0-2])\/?([0-9]{2})$/'];
                 $rules['cardCvv'] = 'required|numeric|digits_between:3,4';
+            }
+        } elseif ($this->selectedPaymentMethod === 'pix') {
+            $rules = [
+                'pixName' => 'required|string|max:255',
+                'pixEmail' => 'required|email',
+                'pixPhone' => ['nullable', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
+            ];
+
+            if ($this->selectedLanguage === 'br') {
+                $rules['pixCpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
             }
         }
 
@@ -307,44 +319,37 @@ class PagePay extends Component
 
     public function startCheckout()
     {
-        if ($this->cardNumber) {
-            $this->cardNumber = preg_replace('/\D/', '', $this->cardNumber);
-        }
-        if ($this->cardCvv) {
-            $this->cardCvv = preg_replace('/\D/', '', $this->cardCvv);
-        }
-        if ($this->phone) {
-            $this->phone = preg_replace('/[^0-9+]/', '', $this->phone);
-        }
-        if ($this->cpf && $this->selectedLanguage === 'br') {
-            $cpf = preg_replace('/\D/', '', $this->cpf);
-            if (strlen($cpf) == 11) {
-                $this->cpf = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
+        if ($this->selectedPaymentMethod === 'credit_card') {
+            if ($this->cardNumber) {
+                $this->cardNumber = preg_replace('/\D/', '', $this->cardNumber);
             }
-        }
-
-        try {
-            // Build the validation rules dynamically.
-            $rules = [
-                'cardName' => 'required|string|max:255',
-                'email' => 'required|email',
-            ];
-
-            if ($this->selectedLanguage === 'br') {
-                $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
+            if ($this->cardCvv) {
+                $this->cardCvv = preg_replace('/\D/', '', $this->cardCvv);
             }
-
-            // ===== VALIDAÇÃO CONDICIONAL: Só exige campos de cartão se método for credit_card =====
-            if ($this->selectedPaymentMethod === 'credit_card') {
-                // Add card-specific rules only if the gateway is not Stripe.
-                if ($this->gateway !== 'stripe') {
-                    $rules['cardNumber'] = 'required|numeric|digits_between:13,19';
-                    $rules['cardExpiry'] = ['required', 'string', 'regex:/^(0[1-9]|1[0-2])\/?([0-9]{2})$/'];
-                    $rules['cardCvv'] = 'required|numeric|digits_between:3,4';
+            if ($this->phone) {
+                $this->phone = preg_replace('/[^0-9+]/', '', $this->phone);
+            }
+            if ($this->cpf && $this->selectedLanguage === 'br') {
+                $cpf = preg_replace('/\D/', '', $this->cpf);
+                if (strlen($cpf) == 11) {
+                    $this->cpf = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
                 }
             }
+        } elseif ($this->selectedPaymentMethod === 'pix') {
+            if ($this->pixPhone) {
+                $this->pixPhone = preg_replace('/[^0-9+]/', '', $this->pixPhone);
+            }
+            if ($this->pixCpf && $this->selectedLanguage === 'br') {
+                $pixCpf = preg_replace('/\D/', '', $this->pixCpf);
+                if (strlen($pixCpf) == 11) {
+                    $this->pixCpf = substr($pixCpf, 0, 3) . '.' . substr($pixCpf, 3, 3) . '.' . substr($pixCpf, 6, 3) . '-' . substr($pixCpf, 9, 2);
+                }
+            }
+        }
 
-            $this->validate($rules);
+
+        try {
+            $this->validate();
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->dispatch('validation:failed');
@@ -572,13 +577,24 @@ class PagePay extends Component
         }
 
         // customer
-        $customerData = [
-            'name' => $this->cardName,
-            'email' => $this->email,
-            'phone_number' => preg_replace('/[^0-9+]/', '', $this->phone),
-        ];
-        if ($this->selectedLanguage === 'br' && $this->cpf) {
-            $customerData['document'] = preg_replace('/\D/', '', $this->cpf);
+        if ($this->selectedPaymentMethod === 'pix') {
+            $customerData = [
+                'name' => $this->pixName,
+                'email' => $this->pixEmail,
+                'phone_number' => preg_replace('/[^0-9+]/', '', $this->pixPhone),
+            ];
+            if ($this->selectedLanguage === 'br' && $this->pixCpf) {
+                $customerData['document'] = preg_replace('/\D/', '', $this->pixCpf);
+            }
+        } else {
+            $customerData = [
+                'name' => $this->cardName,
+                'email' => $this->email,
+                'phone_number' => preg_replace('/[^0-9+]/', '', $this->phone),
+            ];
+            if ($this->selectedLanguage === 'br' && $this->cpf) {
+                $customerData['document'] = preg_replace('/\D/', '', $this->cpf);
+            }
         }
 
         $cardDetails = [
