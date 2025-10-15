@@ -209,42 +209,6 @@ class PagePay extends Component
         return $formattedPlans;
     }
 
-        // // Plan hashes might need to be gateway-specific or mapped
-        // return \GuzzleHttp\Promise\promise_for([
-        //     'monthly' => [
-        //         'hash' => 'rwquocfj5c', // Gateway-specific?
-        //         'label' => __('payment.monthly'),
-        //         'nunber_months' => 1,
-        //         'prices' => [
-        //             'BRL' => ['origin_price' => 50.00, 'descont_price' => 39.90],
-        //             'USD' => ['origin_price' => 10.00, 'descont_price' => 7.90],
-        //             'EUR' => ['origin_price' => 9.00, 'descont_price' => 6.90],
-        //         ],
-        //     ],
-        //     'quarterly' => [
-        //         'hash' => 'velit nostrud dolor in deserunt', // Gateway-specific?
-        //         'label' => __('payment.quarterly'),
-        //         'nunber_months' => 3,
-        //         'prices' => [
-        //             'BRL' => ['origin_price' => 150.00, 'descont_price' => 109.90],
-        //             'USD' => ['origin_price' => 30.00, 'descont_price' => 21.90],
-        //             'EUR' => ['origin_price' => 27.00, 'descont_price' => 19.90],
-        //         ],
-        //     ],
-        //     'semi-annual' => [
-        //         'hash' => 'cupxl', // Gateway-specific?
-        //         'label' => __('payment.semi-annual'),
-        //         'nunber_months' => 6,
-        //         'prices' => [
-        //             'BRL' => ['origin_price' => 300.00, 'descont_price' => 199.90],
-        //             'USD' => ['origin_price' => 60.00, 'descont_price' => 39.90],
-        //             'EUR' => ['origin_price' => 54.00, 'descont_price' => 35.90],
-        //         ],
-        //     ]
-        // ]);
-        // Ensure getPlans returns the full structure as before
-    }
-
     // calculateTotals, startCheckout, rejectUpsell, acceptUpsell remain largely the same
     // but sendCheckout and prepareCheckoutData will be modified.
 
