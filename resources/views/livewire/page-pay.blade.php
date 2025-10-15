@@ -301,7 +301,7 @@ window.addEventListener('beforeunload', function() {
 </div>
 
                     <!-- Card payment form - shown conditionally -->
-                    @if($selectedPaymentMethod === 'credit_card')
+                    @if($selectedPaymentMethod === 'credit_card' && !$showPixModal)
                     <div id="card-payment-form" class="mt-6">
                         <div class="space-y-4">
                             @if($gateway !== 'stripe')
@@ -475,7 +475,7 @@ window.addEventListener('beforeunload', function() {
                 </div>
 
                 <!-- Order Bumps -->
-                @if(!empty($bumps))
+                @if(!empty($bumps) && !$showPixModal)
                 <div class="bg-[#1F1F1F] rounded-xl p-5 border border-gray-700">
                     @foreach ($bumps as $index => $bump)
                     <div class="flex items-start mb-4 last:mb-0">

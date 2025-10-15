@@ -54,6 +54,16 @@ class AbacatePayGateway implements PaymentGatewayInterface
             'metadata' => $paymentData['metadata'] ?? [],
         ];
 
+        // Correct field names for the API
+        if (isset($payload['customer']['phone_number'])) {
+            $payload['customer']['cellphone'] = $payload['customer']['phone_number'];
+            unset($payload['customer']['phone_number']);
+        }
+        if (isset($payload['customer']['document'])) {
+            $payload['customer']['taxId'] = $payload['customer']['document'];
+            unset($payload['customer']['document']);
+        }
+
         try {
             $response = $this->httpClient->post($endpoint, [
                 'headers' => [
