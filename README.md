@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Este documento detalha a implementação da funcionalidade de pagamento PIX no checkout, utilizando a **Abacate Pay** como provedor. O objetivo foi criar uma experiência de pagamento fluida e totalmente independente de serviços externos para a lógica de preços.
+Este documento detalha a implementação da funcionalidade de pagamento PIX no checkout, utilizando a **Abacate Pay** como provedor. O objetivo foi criar uma experiência de pagamento fluida, independente e totalmente funcional, desde a seleção do método de pagamento até a confirmação e redirecionamento do usuário.
 
 ## Como a Funcionalidade Opera
 
@@ -102,5 +102,18 @@ Livewire.on('pix-expired', () => {
 });
 ```
 ---
+## Debugging
+
+Para ajudar a diagnosticar problemas durante o fluxo de pagamento PIX, foi criado um arquivo de log dedicado.
+
+- **Localização do Arquivo:** `storage/logs/pix_payment.log`
+
+Este arquivo registra cada passo importante do processo, incluindo:
+- O início de uma tentativa de checkout.
+- O resultado da validação dos dados do formulário.
+- Os dados exatos que são enviados para a API da Abacate Pay.
+- A resposta (sucesso ou erro) recebida da API da Abacate Pay.
+
+Se o botão "GERAR PIX" não estiver a funcionar ou se ocorrer um erro inesperado, verifique este arquivo primeiro. Ele fornecerá pistas valiosas sobre em que ponto do processo a falha está a ocorrer.
 
 Com essas configurações, a integração está completa, funcional e totalmente independente para a gestão de preços.

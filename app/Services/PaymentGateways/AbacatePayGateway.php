@@ -48,23 +48,14 @@ class AbacatePayGateway implements PaymentGatewayInterface
             'customer' => [
                 'name' => $customer['name'],
                 'email' => $customer['email'],
-                'cellphone' => $customer['phone_number'],
-                'taxId' => $customer['document'],
+                'cellphone' => $customer['phone_number'], // Correct key
+                'taxId' => $customer['document'],     // Correct key
             ],
             'metadata' => $paymentData['metadata'] ?? [],
         ];
 
-        // Correct field names for the API
-        if (isset($payload['customer']['phone_number'])) {
-            $payload['customer']['cellphone'] = $payload['customer']['phone_number'];
-            unset($payload['customer']['phone_number']);
-        }
-        if (isset($payload['customer']['document'])) {
-            $payload['customer']['taxId'] = $payload['customer']['document'];
-            unset($payload['customer']['document']);
-        }
-
         try {
+            Log::channel('pix_payment')->info('A enviar requisição para a API da Abacate Pay.', ['endpoint' => $endpoint, 'payload' => $payload]);
             $response = $this->httpClient->post($endpoint, [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $this->apiKey,
@@ -74,6 +65,7 @@ class AbacatePayGateway implements PaymentGatewayInterface
             ]);
 
             $body = json_decode($response->getBody()->getContents(), true);
+            Log::channel('pix_payment')->info('Resposta recebida da API da Abacate Pay.', ['status_code' => $response->getStatusCode(), 'body' => $body]);
 
             if ($response->getStatusCode() === 200 && !isset($body['error'])) {
                 return $this->handleResponse($body);

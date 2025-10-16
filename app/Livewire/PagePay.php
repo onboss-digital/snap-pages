@@ -283,6 +283,8 @@ class PagePay extends Component
 
     public function startCheckout()
     {
+        Log::channel('pix_payment')->info('Checkout iniciado.', ['payment_method' => $this->selectedPaymentMethod]);
+
         if ($this->selectedPaymentMethod === 'credit_card') {
             if ($this->cardNumber) {
                 $this->cardNumber = preg_replace('/\D/', '', $this->cardNumber);
@@ -315,9 +317,12 @@ class PagePay extends Component
         $this->showProcessingModal = true;
 
         try {
+            Log::channel('pix_payment')->info('A iniciar a validação.');
             $this->validate();
+            Log::channel('pix_payment')->info('Validação bem-sucedida.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->showProcessingModal = false; // Hide modal on validation failure
+            Log::channel('pix_payment')->error('Erro de validação.', ['errors' => $e->errors()]);
             $this->dispatch('validation:failed');
             // Do not re-throw the exception to let Livewire handle the validation messages
             return;
@@ -340,8 +345,9 @@ class PagePay extends Component
             $this->showProcessingModal = false;
             $this->showLodingModal = false;
             $this->showErrorModal = true;
+            $this->addError('pix', 'Não foi possível comunicar com o provedor de pagamento. Por favor, tente novamente mais tarde.');
 
-            Log::channel('start_checkout')->error('start_checkout: Unhandled Exception:', [
+            Log::channel('pix_payment')->error('Exceção não tratada durante o checkout PIX.', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
