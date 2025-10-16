@@ -15,7 +15,8 @@ class PagePay extends Component
 
     public $paymentMethodId, $cardName, $cardNumber, $cardExpiry, $cardCvv, $email, $phone, $cpf,
         $plans, $modalData, $product, $testimonials = [],
-        $utm_source, $utm_medium, $utm_campaign, $utm_id, $utm_term, $utm_content;
+        $utm_source, $utm_medium, $utm_campaign, $utm_id, $utm_term, $utm_content,
+        $pixName, $pixEmail, $pixCpf, $pixPhone;
 
     // ===== NOVAS PROPRIEDADES PARA PIX =====
     public $selectedPaymentMethod = 'credit_card'; // 'credit_card' ou 'pix'
@@ -30,6 +31,7 @@ class PagePay extends Component
     public $showDownsellModal = false;
     public $showUpsellModal = false;
     public $showProcessingModal = false;
+    public $showPixModal = false;
 
     public $selectedCurrency = 'BRL';
     public $selectedLanguage = 'br';
@@ -624,10 +626,25 @@ class PagePay extends Component
         return $baseData;
     }
 
+    public function openPixModal()
+    {
+        $this->selectedPaymentMethod = 'pix';
+        $this->showPixModal = true;
+    }
+
+    public function switchToCard()
+    {
+        $this->selectedPaymentMethod = 'credit_card';
+        $this->showPixModal = false;
+        $this->pixData = null;
+        $this->pixStatus = null;
+    }
+
     public function closeModal()
     {
         $this->showErrorModal = false;
         $this->showSuccessModal = false;
+        $this->showPixModal = false;
     }
 
     public function decrementTimer()
