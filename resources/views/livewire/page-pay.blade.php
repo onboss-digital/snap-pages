@@ -282,17 +282,15 @@ window.addEventListener('beforeunload', function() {
         @if($selectedLanguage === 'br')
         <div
             wire:click="openPixModal"
-            class="payment-method-card cursor-pointer p-6 rounded-lg border-2 transition-all duration-300
+            class="payment-method-card cursor-pointer p-4 rounded-lg border-2 transition-all duration-300 flex items-center space-x-4
                 {{ $selectedPaymentMethod === 'pix' ? 'border-green-500 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:border-gray-600' }}"
         >
-            <div class="flex flex-col items-center text-center">
-                <svg class="w-12 h-12 mb-3 {{ $selectedPaymentMethod === 'pix' ? 'text-green-500' : 'text-gray-400' }}"
-                     fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
-                </svg>
-                <span class="text-lg font-semibold {{ $selectedPaymentMethod === 'pix' ? 'text-white' : 'text-gray-300' }}">
-                    PIX
-                </span>
+            <svg class="w-10 h-10 text-white flex-shrink-0" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M242.4 292.5C247.8 287.1 257.1 287.1 262.5 292.5L339.5 369.5C353.7 383.7 372.6 391.5 392.6 391.5H407.7L310.6 488.6C280.3 518.1 231.1 518.1 200.8 488.6L103.3 391.5H112.6C132.6 391.5 151.5 383.7 165.7 369.5L242.4 292.5zM262.5 218.9C257.1 224.3 247.8 224.3 242.4 218.9L165.7 142.1C151.5 127.9 132.6 120.1 112.6 120.1H103.3L200.7 22.76C231.1-7.586 280.3-7.586 310.6 22.76L407.7 120.1H392.6C372.6 120.1 353.7 127.9 339.5 142.1L262.5 218.9z"/>
+            </svg>
+            <div>
+                <p class="text-lg font-semibold {{ $selectedPaymentMethod === 'pix' ? 'text-white' : 'text-gray-300' }}">Pague com PIX</p>
+                <p class="text-sm text-gray-400">Aprovação imediata, sem taxas.</p>
             </div>
         </div>
         @endif
