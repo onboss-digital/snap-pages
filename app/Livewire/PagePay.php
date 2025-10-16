@@ -5,34 +5,33 @@ namespace App\Livewire;
 use App\Factories\PaymentGatewayFactory;
 use App\Interfaces\PaymentGatewayInterface;
 use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 
 class PagePay extends Component
 {
+    // Propriedades para o formulário de Cartão de Crédito
+    public $cardName, $email, $phone, $cpf;
+    // Propriedades específicas do Stripe
+    public $paymentMethodId;
 
-    public $paymentMethodId, $cardName, $cardNumber, $cardExpiry, $cardCvv, $email, $phone, $cpf,
-        $plans, $modalData, $product, $testimonials = [],
-        $utm_source, $utm_medium, $utm_campaign, $utm_id, $utm_term, $utm_content,
-        $pixName, $pixEmail, $pixCpf, $pixPhone;
+    // Propriedades para o formulário PIX (independentes)
+    public $pixName, $pixEmail, $pixPhone, $pixCpf;
 
-    // ===== NOVAS PROPRIEDADES PARA PIX =====
-    public $selectedPaymentMethod = 'credit_card'; // 'credit_card' ou 'pix'
-    public $pixData = null; // Dados do PIX (QR Code, brCode, etc)
-    public $pixStatus = null; // Status do pagamento PIX (PENDING, PAID, EXPIRED, FAILED)
+    // Estado do Componente
+    public $plans, $modalData, $product, $testimonials = [];
+    public $selectedPaymentMethod = 'credit_card';
+    public $pixData = null;
+    public $pixStatus = null;
 
-    // Modais
+    // Modals
     public $showSuccessModal = false;
     public $showErrorModal = false;
-    public $showSecure = false;
-    public $showLodingModal = false;
-    public $showDownsellModal = false;
-    public $showUpsellModal = false;
     public $showProcessingModal = false;
     public $showPixModal = false;
 
+    // Configurações de Idioma e Moeda
     public $selectedCurrency = 'BRL';
     public $selectedLanguage = 'br';
     public $selectedPlan = 'monthly';
@@ -41,36 +40,16 @@ class PagePay extends Component
         'en' => '🇺🇸 English',
         'es' => '🇪🇸 Español',
     ];
-
     public $currencies = [
         'BRL' => ['symbol' => 'R$', 'name' => 'Real Brasileiro', 'code' => 'BRL', 'label' => "payment.brl"],
         'USD' => ['symbol' => '$', 'name' => 'Dólar Americano', 'code' => 'USD', 'label' => "payment.usd"],
         'EUR' => ['symbol' => '€', 'name' => 'Euro', 'code' => 'EUR', 'label' => "payment.eur"],
     ];
 
-    public $bumpActive = false;
-    public $bumps = [];
-
-    public $countdownMinutes = 14;
-    public $countdownSeconds = 22;
-    public $spotsLeft = 12;
-    public $activityCount = 0;
+    // Outras propriedades
     public $totals = [];
-
     private PaymentGatewayInterface $paymentGateway;
-
     public $gateway;
-    protected $apiUrl;
-    private $httpClient;
-
-    public function __construct()
-    {
-        $this->httpClient = new Client([
-            'verify' => !env('APP_DEBUG'),
-        ]);
-        $this->apiUrl = config('services.streamit.api_url');
-        $this->gateway = config('services.default_payment_gateway');
-    }
 
     protected function rules()
     {
@@ -78,21 +57,14 @@ class PagePay extends Component
             $rules = [
                 'cardName' => 'required|string|max:255',
                 'email' => 'required|email',
-                'phone' => ['nullable', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
             ];
             if ($this->selectedLanguage === 'br') {
                 $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
-            }
-            if ($this->gateway !== 'stripe') {
-                $rules['cardNumber'] = 'required|numeric|digits_between:13,19';
-                $rules['cardExpiry'] = ['required', 'string', 'regex:/^(0[1-9]|1[0-2])\/?([0-9]{2})$/'];
-                $rules['cardCvv'] = 'required|numeric|digits_between:3,4';
             }
         } elseif ($this->selectedPaymentMethod === 'pix') {
             $rules = [
                 'pixName' => 'required|string|max:255',
                 'pixEmail' => 'required|email',
-                'pixPhone' => ['nullable', 'string', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
             ];
             if ($this->selectedLanguage === 'br') {
                 $rules['pixCpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
@@ -103,33 +75,9 @@ class PagePay extends Component
         return $rules;
     }
 
-    public function debug()
-    {
-        $this->cardName = 'João da Silva';
-        $this->email = 'test@mail.com';
-        $this->phone = '+5511999999999';
-        $this->cpf = '123.456.789-09';
-
-        $this->pixName = 'Maria da Silva';
-        $this->pixEmail = 'maria@silva.com';
-        $this->pixPhone = '+5511988888888';
-        $this->pixCpf = '987.654.321-01';
-    }
-
-    public function mount(PaymentGatewayInterface $paymentGateway = null)
+    public function mount()
     {
         Log::channel('pix_payment')->info('Componente PagePay montado com sucesso.');
-
-        $this->utm_source = request()->query('utm_source');
-        $this->utm_medium = request()->query('utm_medium');
-        $this->utm_campaign = request()->query('utm_campaign');
-        $this->utm_id = request()->query('utm_id');
-        $this->utm_term = request()->query('utm_term');
-        $this->utm_content = request()->query('utm_content');
-
-        if (env('APP_DEBUG')) {
-            $this->debug();
-        }
 
         if (!Session::has('locale_detected')) {
             $this->detectLanguage();
@@ -141,19 +89,14 @@ class PagePay extends Component
 
         $this->testimonials = trans('checkout.testimonials');
         $this->plans = $this->getPlans();
-        $this->selectedCurrency = Session::get('selectedCurrency', 'BRL');
         $this->selectedPlan = Session::get('selectedPlan', 'monthly');
         $this->calculateTotals();
-        $this->activityCount = rand(1, 50);
         
         if (isset($this->plans[$this->selectedPlan])) {
             $this->product = [
                 'hash' => $this->plans[$this->selectedPlan]['hash'] ?? null,
                 'title' => $this->plans[$this->selectedPlan]['label'] ?? '',
-                'price_id' => null, // Assuming no price_id from local config
             ];
-        } else {
-            $this->product = ['hash' => null, 'title' => '', 'price_id' => null];
         }
     }
 
@@ -173,7 +116,6 @@ class PagePay extends Component
                         'descont_price' => $plan['price'] / 100,
                     ],
                 ],
-                'order_bumps' => [],
             ];
         }
         return $formattedPlans;
@@ -181,61 +123,30 @@ class PagePay extends Component
 
     public function calculateTotals()
     {
-        if (!isset($this->plans[$this->selectedPlan])) {
+        $plan = $this->plans[$this->selectedPlan] ?? null;
+        if (!$plan) {
             Log::error('Plano selecionado não encontrado.', ['selected_plan' => $this->selectedPlan]);
             return;
         }
-        $plan = $this->plans[$this->selectedPlan];
 
-        if (!isset($plan['prices']) || !is_array($plan['prices'])) {
-            Log::error('Array de preços não encontrado para o plano.', ['plan' => $this->selectedPlan]);
+        $prices = $plan['prices'][$this->selectedCurrency] ?? null;
+        if (!$prices) {
+            Log::error('Preços não encontrados para a moeda selecionada.', ['plan' => $this->selectedPlan, 'currency' => $this->selectedCurrency]);
             return;
         }
-
-        $availableCurrency = null;
-        if (isset($plan['prices'][$this->selectedCurrency])) {
-            $availableCurrency = $this->selectedCurrency;
-        } elseif (isset($plan['prices']['BRL'])) {
-            $availableCurrency = 'BRL';
-        }
-
-        if (is_null($availableCurrency)) {
-            Log::error('Nenhuma moeda válida encontrada para o plano.', ['plan' => $this->selectedPlan]);
-            $this->addError('totals', 'Não foi possível carregar os preços.');
-            return;
-        }
-
-        $this->selectedCurrency = $availableCurrency;
-        $prices = $plan['prices'][$this->selectedCurrency];
 
         $this->totals = [
-            'month_price' => $prices['origin_price'] / $plan['nunber_months'],
-            'month_price_discount' => $prices['descont_price'] / $plan['nunber_months'],
             'total_price' => $prices['origin_price'],
             'total_discount' => $prices['origin_price'] - $prices['descont_price'],
+            'final_price' => $prices['descont_price'],
         ];
 
-        $finalPrice = $prices['descont_price'];
-
-        if ($this->selectedPaymentMethod === 'credit_card') {
-            foreach ($this->bumps as $bump) {
-                if (!empty($bump['active'])) {
-                    $finalPrice += floatval($bump['price']);
-                }
-            }
-        }
-
-        $this->totals['final_price'] = $finalPrice;
-
-        $this->totals = array_map(function ($value) {
-            return number_format(round($value, 2), 2, ',', '.');
-        }, $this->totals);
+        $this->totals = array_map(fn($value) => number_format(round($value, 2), 2, ',', '.'), $this->totals);
     }
 
     public function startCheckout()
     {
         Log::channel('pix_payment')->info('Checkout iniciado.', ['payment_method' => $this->selectedPaymentMethod]);
-
         $this->showProcessingModal = true;
 
         try {
@@ -245,7 +156,6 @@ class PagePay extends Component
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->showProcessingModal = false;
             Log::channel('pix_payment')->error('Erro de validação.', ['errors' => $e->errors()]);
-            $this->dispatch('validation:failed');
             return;
         }
 
@@ -254,7 +164,7 @@ class PagePay extends Component
         } catch (\Exception $e) {
             $this->showProcessingModal = false;
             $this->showErrorModal = true;
-            $this->addError('pix', 'Não foi possível comunicar com o provedor de pagamento. Tente novamente.');
+            $this->addError('pix', 'Não foi possível comunicar com o provedor de pagamento.');
             Log::channel('pix_payment')->error('Exceção não tratada durante o checkout.', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -265,40 +175,26 @@ class PagePay extends Component
     public function sendCheckout()
     {
         $checkoutData = $this->prepareCheckoutData();
-        $this->paymentGateway = PaymentGatewayFactory::create();
+        $this->paymentGateway = PaymentGatewayFactory::create('abacatepay');
         $response = $this->paymentGateway->processPayment($checkoutData);
 
         if ($this->selectedPaymentMethod === 'pix') {
             if ($response['status'] === 'success') {
                 $this->pixData = $response['data'];
                 $this->pixStatus = $response['data']['status'] ?? 'PENDING';
-                $this->showProcessingModal = false;
                 $this->dispatch('pix-generated');
                 Log::channel('pix_payment')->info('PIX criado com sucesso.', ['pix_id' => $this->pixData['pix_id']]);
             } else {
-                $this->showProcessingModal = false;
                 $this->showErrorModal = true;
                 $this->addError('pix', $response['message'] ?? 'Ocorreu um erro ao gerar o PIX.');
             }
-            return;
         }
-
-        // Handling for credit card payment
-        if ($response['status'] === 'success') {
-            $this->showSuccessModal = true;
-            $this->showProcessingModal = false;
-            // Redirect or other success actions for credit card would go here
-        } else {
-            $this->showProcessingModal = false;
-            $this->showErrorModal = true;
-            $this->addError('credit_card', $response['message'] ?? 'Ocorreu um erro no pagamento com cartão.');
-        }
+        $this->showProcessingModal = false;
     }
 
     private function prepareCheckoutData()
     {
         $numeric_final_price = floatval(str_replace(',', '.', str_replace('.', '', $this->totals['final_price'])));
-        $currentPlanDetails = $this->plans[$this->selectedPlan];
 
         if ($this->selectedPaymentMethod === 'pix') {
             $customerData = [
@@ -315,40 +211,16 @@ class PagePay extends Component
                 'document' => $this->cpf,
             ];
         }
-        $cartItems = [];
-        // Add main product to cart
-        $cartItems[] = [
-            'product_hash' => $currentPlanDetails['hash'],
-            'title' => $this->product['title'] . ' - ' . $currentPlanDetails['label'],
-            'price' => (int)round(floatval($currentPlanDetails['prices'][$this->selectedCurrency]['descont_price']) * 100),
-        ];
-
-        if ($this->selectedPaymentMethod === 'credit_card') {
-            foreach ($this->bumps as $bump) {
-                if (!empty($bump['active'])) {
-                    $cartItems[] = [
-                        'product_hash' => $bump['hash'],
-                        'title' => $bump['title'],
-                        'price' => (int)round(floatval($bump['price']) * 100),
-                    ];
-                }
-            }
-        }
 
         $baseData = [
             'amount' => (int)round($numeric_final_price * 100),
             'currency_code' => $this->selectedCurrency,
             'payment_method' => $this->selectedPaymentMethod,
             'customer' => $customerData,
-            'cart' => $cartItems,
-            'metadata' => []
         ];
 
         if ($this->selectedPaymentMethod === 'pix') {
             $baseData['expiresIn'] = config('services.abacatepay.pix_expiration', 1800);
-        } elseif ($this->selectedPaymentMethod === 'credit_card') {
-            $baseData['payment_method_id'] = $this->paymentMethodId;
-            // Add other card-specific data if needed
         }
 
         return $baseData;
@@ -358,7 +230,6 @@ class PagePay extends Component
     {
         $this->selectedPaymentMethod = 'pix';
         $this->showPixModal = true;
-        $this->calculateTotals(); // Recalculate totals without bumps
     }
 
     public function switchToCard()
@@ -367,16 +238,13 @@ class PagePay extends Component
         $this->showPixModal = false;
         $this->pixData = null;
         $this->pixStatus = null;
-        $this->calculateTotals(); // Recalculate totals with bumps if active
     }
 
     public function closeModal()
     {
         $this->showErrorModal = false;
-        $this->showSuccessModal = false;
         $this->showPixModal = false;
-        // Reset to default payment method if user closes modal without paying
-        if($this->selectedPaymentMethod === 'pix' && !$this->pixData) {
+        if ($this->selectedPaymentMethod === 'pix' && !$this->pixData) {
             $this->selectedPaymentMethod = 'credit_card';
         }
     }
@@ -396,19 +264,13 @@ class PagePay extends Component
             $this->plans = $this->getPlans();
             $this->testimonials = trans('checkout.testimonials');
             $this->calculateTotals();
-            $this->dispatch('languageChanged');
         }
     }
 
     private function detectLanguage()
     {
         $preferredLanguage = request()->getPreferredLanguage(array_keys($this->availableLanguages));
-        if (str_starts_with($preferredLanguage, 'pt')) {
-            $this->selectedLanguage = 'br';
-        } else {
-            $this->selectedLanguage = 'en';
-        }
-        $this->changeLanguage($this->selectedLanguage);
+        $this->changeLanguage(str_starts_with($preferredLanguage, 'pt') ? 'br' : 'en');
     }
 
     public function checkPixStatus()
@@ -423,12 +285,8 @@ class PagePay extends Component
 
             if ($response['status'] === 'success') {
                 $this->pixStatus = $response['data']['status'];
-
-                if ($this->pixStatus === 'PAID') {
-                    $this->dispatch('pix-paid');
-                } elseif (in_array($this->pixStatus, ['EXPIRED', 'FAILED'])) {
-                    $this->dispatch('pix-failed');
-                }
+                if ($this->pixStatus === 'PAID') $this->dispatch('pix-paid');
+                elseif (in_array($this->pixStatus, ['EXPIRED', 'FAILED'])) $this->dispatch('pix-failed');
             }
         } catch (\Exception $e) {
             Log::channel('pix_payment')->error('Erro ao verificar status do PIX.', [
@@ -440,9 +298,6 @@ class PagePay extends Component
 
     public function render()
     {
-        return view('livewire.page-pay')->layoutData([
-            'title' => __('payment.title'),
-            'canonical' => url()->current(),
-        ]);
+        return view('livewire.page-pay')->layoutData(['title' => __('payment.title')]);
     }
 }
