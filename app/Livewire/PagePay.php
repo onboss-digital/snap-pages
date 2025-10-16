@@ -144,6 +144,7 @@ class PagePay extends Component
 
     public function mount(PaymentGatewayInterface $paymentGateway = null) // Modified to allow injection, or resolve via factory
     {
+        Log::channel('pix_payment')->info('Componente PagePay montado com sucesso.');
         $this->utm_source = request()->query('utm_source');
         $this->utm_medium = request()->query('utm_medium');
         $this->utm_campaign = request()->query('utm_campaign');
@@ -278,7 +279,7 @@ class PagePay extends Component
     $this->totals = array_map(function ($value) {
         return number_format(round($value, 2), 2, ',', '.');
     }, $this->totals);
-}
+    }
 
 
     public function startCheckout()
