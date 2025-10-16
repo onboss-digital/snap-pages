@@ -9,7 +9,6 @@ use GuzzleHttp\Psr7\Request;
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
-use App\Models\Order;
 
 class PagePay extends Component
 {
@@ -281,6 +280,18 @@ class PagePay extends Component
                 $this->showErrorModal = true;
                 $this->addError('pix', $response['message'] ?? 'Ocorreu um erro ao gerar o PIX.');
             }
+            return;
+        }
+
+        // Handling for credit card payment
+        if ($response['status'] === 'success') {
+            $this->showSuccessModal = true;
+            $this->showProcessingModal = false;
+            // Redirect or other success actions for credit card would go here
+        } else {
+            $this->showProcessingModal = false;
+            $this->showErrorModal = true;
+            $this->addError('credit_card', $response['message'] ?? 'Ocorreu um erro no pagamento com cartão.');
         }
     }
 
@@ -304,17 +315,40 @@ class PagePay extends Component
                 'document' => $this->cpf,
             ];
         }
+        $cartItems = [];
+        // Add main product to cart
+        $cartItems[] = [
+            'product_hash' => $currentPlanDetails['hash'],
+            'title' => $this->product['title'] . ' - ' . $currentPlanDetails['label'],
+            'price' => (int)round(floatval($currentPlanDetails['prices'][$this->selectedCurrency]['descont_price']) * 100),
+        ];
+
+        if ($this->selectedPaymentMethod === 'credit_card') {
+            foreach ($this->bumps as $bump) {
+                if (!empty($bump['active'])) {
+                    $cartItems[] = [
+                        'product_hash' => $bump['hash'],
+                        'title' => $bump['title'],
+                        'price' => (int)round(floatval($bump['price']) * 100),
+                    ];
+                }
+            }
+        }
 
         $baseData = [
             'amount' => (int)round($numeric_final_price * 100),
             'currency_code' => $this->selectedCurrency,
             'payment_method' => $this->selectedPaymentMethod,
             'customer' => $customerData,
+            'cart' => $cartItems,
             'metadata' => []
         ];
 
         if ($this->selectedPaymentMethod === 'pix') {
             $baseData['expiresIn'] = config('services.abacatepay.pix_expiration', 1800);
+        } elseif ($this->selectedPaymentMethod === 'credit_card') {
+            $baseData['payment_method_id'] = $this->paymentMethodId;
+            // Add other card-specific data if needed
         }
 
         return $baseData;
