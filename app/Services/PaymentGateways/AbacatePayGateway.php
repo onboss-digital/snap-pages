@@ -48,13 +48,14 @@ class AbacatePayGateway implements PaymentGatewayInterface
             'customer' => [
                 'name' => $customer['name'],
                 'email' => $customer['email'],
-                'cellphone' => $customer['phone_number'],
-                'taxId' => $customer['document'],
+                'cellphone' => $customer['phone_number'], // Correct key
+                'taxId' => $customer['document'],     // Correct key
             ],
             'metadata' => $paymentData['metadata'] ?? [],
         ];
 
         try {
+            Log::channel('pix_payment')->info('A enviar requisição para a API da Abacate Pay.', ['endpoint' => $endpoint, 'payload' => $payload]);
             $response = $this->httpClient->post($endpoint, [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $this->apiKey,
@@ -64,6 +65,7 @@ class AbacatePayGateway implements PaymentGatewayInterface
             ]);
 
             $body = json_decode($response->getBody()->getContents(), true);
+            Log::channel('pix_payment')->info('Resposta recebida da API da Abacate Pay.', ['status_code' => $response->getStatusCode(), 'body' => $body]);
 
             if ($response->getStatusCode() === 200 && !isset($body['error'])) {
                 return $this->handleResponse($body);
@@ -75,9 +77,11 @@ class AbacatePayGateway implements PaymentGatewayInterface
             }
         } catch (GuzzleException $e) {
             Log::channel('payment_checkout')->error('AbacatePay API communication error', [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'request_body' => $payload,
+                'trace' => $e->getTraceAsString(),
             ]);
-            return ['status' => 'error', 'message' => 'Could not connect to payment gateway.'];
+            return ['status' => 'error', 'message' => 'Could not connect to the payment gateway. Please try again later.'];
         }
     }
 

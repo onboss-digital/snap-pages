@@ -1,198 +1,119 @@
-# SnapHub Pages
+# Implementação de Pagamento PIX com Abacate Pay
 
 ## Visão Geral
-O SnapHub Pages é uma plataforma especializada na criação e gerenciamento de páginas de vendas, landing pages e exibição de produtos para o ecossistema SnapHub. A aplicação permite criar, personalizar e publicar rapidamente páginas para:
 
-## Tecnologias Utilizadas
-- **Backend**: Laravel 12.x (PHP 8.2+)
-- **Frontend Interativo**: Livewire 3.x
-- **CSS**: TailwindCSS 4.x
-- **Bancos de Dados**: MySQL/PostgreSQL
+Este documento detalha a implementação da funcionalidade de pagamento PIX no checkout, utilizando a **Abacate Pay** como provedor. O objetivo foi criar uma experiência de pagamento fluida, independente e totalmente funcional, desde a seleção do método de pagamento até a confirmação e redirecionamento do usuário.
 
-## Requisitos do Sistema
-- PHP 8.2 ou superior
-- Composer
-- Node.js 16+ e NPM
-- MySQL 8.0 ou PostgreSQL 12+
+## Como a Funcionalidade Opera
 
-## Instalação
+O fluxo de pagamento foi projetado para ser intuitivo e claro para o usuário:
 
-```bash
-# Clone o repositório
-git clone https://github.com/IsottonTecnologia/snaphubb-pages.git
-cd snaphubb-pages
+1.  **Seleção do Método de Pagamento**: Na página de checkout, o usuário verá duas opções de pagamento: "Cartão" e "PIX".
+2.  **Abertura do Modal PIX**: Ao clicar no card "PIX", um modal independente é aberto.
+3.  **Resumo do Pedido e Formulário**:
+    *   O topo do modal exibe um **resumo claro do pedido**. As informações de preço (valor, descontos, etc.) são lidas de um arquivo de configuração local (`config/plans.php`).
+    *   Abaixo do resumo, um formulário solicita os dados necessários para a transação PIX: **Nome Completo**, **E-mail**, **Telefone** e **CPF**.
+4.  **Geração do QR Code**:
+    *   Ao clicar em "GERAR PIX", o sistema valida os dados e exibe um indicador de "processando".
+    *   Com os dados validados, o sistema faz uma chamada à API da Abacate Pay, enviando o valor final (lido do arquivo de configuração local) para criar a cobrança PIX.
+    *   O modal é atualizado para exibir o **QR Code**, o código **"copia e cola"** e o **tempo de expiração**.
+5.  **Confirmação de Pagamento e Redirecionamento**:
+    *   O sistema verifica o status do pagamento em segundo plano.
+    *   Quando o pagamento é confirmado (`PAID`), o usuário é **automaticamente redirecionado** para a página de sucesso.
+    *   Em caso de falha ou expiração, o usuário é redirecionado para uma página de falha.
 
-# Instalar dependências PHP
-composer install
+---
 
-# Instalar dependências JavaScript
-npm install
+## Configuração do Projeto
 
-# Configurar ambiente
-cp .env.example .env
-php artisan key:generate
+Para que a funcionalidade opere corretamente, é crucial configurar os seguintes arquivos.
 
-# Configurar banco de dados no arquivo .env e executar migrações
-php artisan migrate
+### 1. Arquivo de Configuração de Planos (`config/plans.php`)
 
-# Compilar assets
-npm run dev
+Esta é a **fonte da verdade** para os planos e preços. A dependência de APIs externas para preços foi removida para garantir total autonomia.
 
-# Iniciar servidor de desenvolvimento
-php artisan serve
-```
-
-## Payment Gateway Configuration
-
-This application supports multiple payment gateways. The active gateway can be configured via environment variables.
-
-### Configuring the Active Gateway
-
-1.  Open your `.env` file.
-2.  Set the `DEFAULT_PAYMENT_GATEWAY` variable to the desired gateway's key. Currently supported keys are:
-    *   `tribopay`
-    *   `for4payment` (Note: This is a placeholder implementation)
-
-    Example:
-    ```env
-    DEFAULT_PAYMENT_GATEWAY=tribopay
-    ```
-
-3.  Ensure that the specific configuration for the chosen gateway is also present in the `.env` file.
-
-    For TriboPay:
-    ```env
-    TRIBO_PAY_API_TOKEN=your_tribopay_api_token
-    TRIBO_PAY_API_URL=https://api.tribopay.com.br
-    ```
-
-    For For4Payment (placeholder):
-    ```env
-    FOR4PAYMENT_API_KEY=your_for4payment_api_key
-    FOR4PAYMENT_API_URL=https://api.for4payment.com
-    ```
-
-### Adding a New Payment Gateway
-
-To add support for a new payment gateway, follow these steps:
-
-1.  **Create a Gateway Class**:
-    *   Create a new class in the `app/Services/PaymentGateways/` directory (e.g., `NewGatewayNameGateway.php`).
-    *   This class must implement the `App\Interfaces\PaymentGatewayInterface`.
-    *   Implement the required methods: `createCardToken(array $cardData): array`, `processPayment(array $paymentData): array`, and `handleResponse(array $responseData, int $statusCode): array`. Refer to existing gateways for examples.
-
-2.  **Add Configuration**:
-    *   Add configuration keys for the new gateway in `config/services.php`. This typically includes API keys, URLs, etc.
-        ```php
-        // In config/services.php
-        'newgatewayname' => [
-            'api_key' => env('NEWGATEWAYNAME_API_KEY'),
-            'api_url' => env('NEWGATEWAYNAME_API_URL'),
-            // other config
-        ],
-        ```
-    *   Add corresponding environment variables to your `.env.example` file and instruct users to add them to their `.env` file.
-        ```env
-        # In .env.example
-        NEWGATEWAYNAME_API_KEY=
-        NEWGATEWAYNAME_API_URL=
-        ```
-
-3.  **Register in Factory**:
-    *   Update `app/Factories/PaymentGatewayFactory.php` to include a case for your new gateway:
-        ```php
-        // In PaymentGatewayFactory.php
-        case 'newgatewayname': // Use a simple key for the gateway
-            return new NewGatewayNameGateway();
-        ```
-
-4.  **Testing**:
-    *   Write unit tests for your new gateway class (`tests/Unit/Services/PaymentGateways/NewGatewayNameGatewayTest.php`).
-    *   Update or add integration tests in `tests/Feature/Livewire/PagePayTest.php` to cover checkout flows using your new gateway (mocking its external API calls).
-
-By following these steps, you can extend the application to support various payment providers while keeping the core checkout logic decoupled.
-# Implementação de Pagamento PIX com Abacate Pay
-
-Este documento detalha a implementação da funcionalidade de pagamento PIX utilizando a Abacate Pay.
-
-## Arquivos Criados
-
-- : Este arquivo contém a lógica de integração com a API da Abacate Pay. Ele é responsável por criar a cobrança PIX e verificar o status do pagamento.
-
-## Arquivos Modificados
-
-- : Este arquivo foi modificado para incluir a  como um gateway de pagamento disponível.
-- : O componente Livewire foi atualizado para manipular o fluxo de pagamento PIX. As principais alterações incluem:
-    - Despachar eventos Livewire (, , ) para o front-end.
-    - Chamar o  para criar cobranças PIX e verificar o status do pagamento.
-- : O arquivo de visualização foi atualizado para incluir o polling de JavaScript para o status do PIX.
-
-## Configuração de Produção
-
-Para configurar o ambiente de produção, os seguintes arquivos precisam ser atualizados:
-
-- :
-    - : Defina para sua chave de API de produção da Abacate Pay.
-    - : Defina para o URL da API de produção da Abacate Pay.
-    - : Defina como  se o PIX for o método de pagamento padrão.
-- :
-    - Configure as credenciais da Abacate Pay no array .
-
-
-
-- :
-    - Atualize os URLs de redirecionamento para  e  para seus URLs de produção.
-
-
-
-# Implementação de Pagamento PIX com Abacate Pay
-
-Este documento detalha a implementação da funcionalidade de pagamento PIX utilizando a Abacate Pay.
-
-## Arquivos Criados
-
-- `app/Services/PaymentGateways/AbacatePayGateway.php`: Este arquivo contém a lógica de integração com a API da Abacate Pay. Ele é responsável por criar a cobrança PIX e verificar o status do pagamento.
-
-## Arquivos Modificados
-
-- `app/Factories/PaymentGatewayFactory.php`: Este arquivo foi modificado para incluir a `AbacatePayGateway` como um gateway de pagamento disponível.
-- `app/Livewire/PagePay.php`: O componente Livewire foi atualizado para manipular o fluxo de pagamento PIX. As principais alterações incluem:
-    - Despachar eventos Livewire (`pix-generated`, `pix-paid`, `pix-failed`) para o front-end.
-    - Chamar o `AbacatePayGateway` para criar cobranças PIX e verificar o status do pagamento.
-- `resources/views/livewire/page-pay.blade.php`: O arquivo de visualização foi atualizado para incluir o polling de JavaScript para o status do PIX.
-
-## Configuração de Produção
-
-Para configurar o ambiente de produção, os seguintes arquivos precisam ser atualizados:
-
-- `.env`:
-    - `ABACATEPAY_API_KEY`: Defina para sua chave de API de produção da Abacate Pay.
-    - `ABACATEPAY_API_URL`: Defina para o URL da API de produção da Abacate Pay.
-    - `DEFAULT_PAYMENT_GATEWAY`: Defina como `abacatepay` se o PIX for o método de pagamento padrão.
-- `config/services.php`:
-    - Configure as credenciais da Abacate Pay no array `abacatepay`.
+**Exemplo de configuração para um plano mensal:**
 
 ```php
+// Em config/plans.php
+
+return [
+    'monthly' => [
+        'id' => 'prod_1MXtRjLJfwbabM1aYeYtX2h3', // ID do Produto na Abacate Pay (usado para referência interna)
+        'price' => 2490, // Preço final em centavos (ex: R$ 24,90)
+        'label' => 'Plano Mensal',
+        'original_price' => 4990, // Preço original em centavos (usado para mostrar o desconto)
+    ],
+    // Você pode adicionar outros planos aqui no futuro
+];
+```
+
+**Para alterar o preço ou o ID do produto, modifique este arquivo.**
+
+### 2. Variáveis de Ambiente (`.env`)
+
+Adicione as seguintes chaves ao seu arquivo `.env` com as suas credenciais da Abacate Pay.
+
+```dotenv
+# CHAVE DA API DA ABACATE PAY
+ABACATEPAY_API_KEY=abc_sua_chave_aqui
+
+# URL DA API (geralmente não muda)
+ABACATEPAY_API_URL=https://api.abacatepay.com/v1
+
+# TEMPO DE EXPIRAÇÃO DO PIX (em segundos)
+ABACATEPAY_PIX_EXPIRATION=1800
+```
+
+### 3. Configuração de Serviços (`config/services.php`)
+
+Garanta que o arquivo `config/services.php` esteja configurado para ler as variáveis de ambiente da Abacate Pay.
+
+```php
+// Em config/services.php
+
 'abacatepay' => [
     'api_key' => env('ABACATEPAY_API_KEY'),
     'api_url' => env('ABACATEPAY_API_URL', 'https://api.abacatepay.com/v1'),
-    'pix_expiration' => env('ABACATEPAY_PIX_EXPIRATION', 1800), // in seconds
+    'pix_expiration' => env('ABACATEPAY_PIX_EXPIRATION', 1800),
 ],
 ```
 
-- `resources/views/livewire/page-pay.blade.php`:
-    - Atualize os URLs de redirecionamento para `pix-paid` e `pix-failed` para seus URLs de produção.
+### 4. URLs de Redirecionamento no JavaScript
+
+As URLs de redirecionamento (sucesso/falha) após o pagamento são definidas no arquivo `resources/views/livewire/page-pay.blade.php`. **Você precisa alterar estas URLs para as suas URLs de produção.**
 
 ```javascript
+// Em resources/views/livewire/page-pay.blade.php
+
 Livewire.on('pix-paid', () => {
-    console.log('PIX pago! Redirecionando...');
-    stopPixPolling();
-    window.location.href = 'SEU_URL_DE_SUCESSO_AQUI';
+    // 👇 ALTERE A URL ABAIXO
+    window.location.href = 'https://seusite.com/obrigado';
 });
 
 Livewire.on('pix-failed', () => {
-    console.log('PIX falhou! Redirecionando...');
-    stopPixPolling();
-    window.location.href = 'SEU_URL_DE_FALHA_AQUI';
+    // 👇 ALTERE A URL ABAIXO
+    window.location.href = 'https://seusite.com/falha-no-pagamento';
+});
+
+Livewire.on('pix-expired', () => {
+    // 👇 ALTERE A URL ABAIXO
+    window.location.href = 'https://seusite.com/falha-no-pagamento';
 });
 ```
+---
+## Debugging
+
+Para ajudar a diagnosticar problemas durante o fluxo de pagamento PIX, foi criado um arquivo de log dedicado.
+
+- **Localização do Arquivo:** `storage/logs/pix_payment.log`
+
+Este arquivo registra cada passo importante do processo, incluindo:
+- O início de uma tentativa de checkout.
+- O resultado da validação dos dados do formulário.
+- Os dados exatos que são enviados para a API da Abacate Pay.
+- A resposta (sucesso ou erro) recebida da API da Abacate Pay.
+
+Se o botão "GERAR PIX" não estiver a funcionar ou se ocorrer um erro inesperado, verifique este arquivo primeiro. Ele fornecerá pistas valiosas sobre em que ponto do processo a falha está a ocorrer.
+
+Com essas configurações, a integração está completa, funcional e totalmente independente para a gestão de preços.

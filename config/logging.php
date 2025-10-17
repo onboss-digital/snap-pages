@@ -20,6 +20,12 @@ return [
             'ignore_exceptions' => false,
         ],
 
+    'pix_payment' => [
+        'driver' => 'single',
+        'path' => storage_path('logs/pix_payment.log'),
+        'level' => 'debug',
+    ],
+
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
