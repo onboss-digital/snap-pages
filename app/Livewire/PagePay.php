@@ -49,6 +49,9 @@ class PagePay extends Component
     public $countdownMinutes = 15;
     public $countdownSeconds = 0;
     public $spotsLeft = 12;
+    public $activityCount = 0;
+    public $showSecure = false;
+    public $spotsLeft = 12;
 
     protected function rules()
     {
