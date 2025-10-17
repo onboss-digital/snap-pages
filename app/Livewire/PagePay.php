@@ -48,6 +48,7 @@ class PagePay extends Component
     private PaymentGatewayInterface $paymentGateway;
     public $countdownMinutes = 15;
     public $countdownSeconds = 0;
+    public $spotsLeft = 12;
 
     protected function rules()
     {
