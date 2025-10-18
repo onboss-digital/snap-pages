@@ -15,6 +15,7 @@
     },
     "dependencies": {
         "@alpinejs/mask": "^3.14.9",
-        "alpinejs": "^3.14.9"
+        "alpinejs": "^3.14.9",
+        "intl-tel-input": "^25.11.3"
     }
 }

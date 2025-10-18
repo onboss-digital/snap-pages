@@ -93,9 +93,11 @@ $gateway = config('services.default_payment_gateway', 'stripe');
     gtag('config', 'G-VYXG6DL5W4');
 </script>
 <!-- End Google Analytics -->
+@vite(['node_modules/intl-tel-input/build/css/intlTelInput.css'])
 @endsection
 
 @section('scripts')
+@vite(['node_modules/intl-tel-input/build/js/intlTelInput.min.js'])
 <script>
 // Polling para verificar status do PIX
 let pixPollingInterval = null;
@@ -358,21 +360,46 @@ window.addEventListener('beforeunload', function() {
                                 @enderror
                             </div>
 
-                            <div>
+                            <div x-data="{ email: '', domain: '', suggestions: ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com'], get filteredSuggestions() { return this.suggestions.filter(s => s.startsWith(this.domain)) } }" class="relative">
                                 <label class="block text-sm font-medium text-gray-300 mb-1">E-mail</label>
                                 <input name="email" type="email" placeholder="seu@email.com"
                                     wire:model.defer="email"
+                                    x-model="email"
+                                    @input="atIndex = email.indexOf('@'); if (atIndex > -1) { domain = email.substring(atIndex + 1); } else { domain = '' }"
                                     class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                <template x-if="domain && filteredSuggestions.length > 0">
+                                    <ul class="absolute z-10 w-full bg-[#2D2D2D] border border-gray-700 rounded-b-lg -mt-1">
+                                        <template x-for="suggestion in filteredSuggestions">
+                                            <li @click="email = email.substring(0, email.indexOf('@') + 1) + suggestion; domain = ''" class="px-3 py-2 cursor-pointer hover:bg-gray-700" x-text="email.substring(0, email.indexOf('@') + 1) + suggestion"></li>
+                                        </template>
+                                    </ul>
+                                </template>
                                 @error('email')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
 
-                            <div>
+                            <div wire:ignore>
                                 <label
                                     class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.phone') }}</label>
-                                <input name="phone" type="tel" placeholder="+55 (11) 99999-9999"
-                                    wire:model.defer="phone"
+                                <input id="phone" name="phone" type="tel" placeholder="+55 (11) 99999-9999"
+                                    x-data="{
+                                        init() {
+                                            const iti = window.intlTelInput(this.$el, {
+                                                initialCountry: 'auto',
+                                                geoIpLookup: callback => {
+                                                    fetch('https://ipapi.co/json')
+                                                        .then(res => res.json())
+                                                        .then(data => callback(data.country_code))
+                                                        .catch(() => callback('us'));
+                                                },
+                                                utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.3/build/js/utils.js'
+                                            });
+                                            this.$el.addEventListener('change', () => {
+                                                $wire.set('phone', iti.getNumber());
+                                            });
+                                        }
+                                    }"
                                     class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
                                 @error('phone')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
