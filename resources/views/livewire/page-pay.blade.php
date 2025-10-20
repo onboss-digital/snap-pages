@@ -96,58 +96,6 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 @endsection
 
 @section('scripts')
-<script>
-// Polling para verificar status do PIX
-let pixPollingInterval = null;
-
-function startPixPolling() {
-    if (pixPollingInterval) {
-        clearInterval(pixPollingInterval);
-    }
-
-    pixPollingInterval = setInterval(function() {
-        @this.call('checkPixStatus');
-    }, 3000); // A cada 3 segundos
-}
-
-function stopPixPolling() {
-    if (pixPollingInterval) {
-        clearInterval(pixPollingInterval);
-        pixPollingInterval = null;
-    }
-}
-
-// Listener para quando o PIX for gerado
-document.addEventListener('livewire:init', () => {
-    Livewire.on('pix-generated', () => {
-        console.log('PIX gerado, iniciando polling...');
-        startPixPolling();
-    });
-
-    Livewire.on('pix-paid', () => {
-        console.log('PIX pago! Redirecionando...');
-        stopPixPolling();
-        window.location.href = 'SEU_URL_DE_SUCESSO_AQUI'; // Substituir pelo URL de produção
-    });
-
-    Livewire.on('pix-failed', () => {
-        console.log('PIX falhou! Redirecionando...');
-        stopPixPolling();
-        window.location.href = 'SEU_URL_DE_FALHA_AQUI'; // Substituir pelo URL de produção
-    });
-
-    Livewire.on('pix-expired', () => {
-        console.log('PIX expirou! Redirecionando...');
-        stopPixPolling();
-        window.location.href = 'SEU_URL_DE_FALHA_AQUI'; // Substituir pelo URL de produção
-    });
-});
-
-// Parar polling quando sair da página
-window.addEventListener('beforeunload', function() {
-    stopPixPolling();
-});
-</script>
 @endsection
 
 
@@ -278,22 +226,6 @@ window.addEventListener('beforeunload', function() {
             </div>
         </div>
 
-        {{-- Card PIX (só para Brasil) --}}
-        @if($selectedLanguage === 'br')
-        <div
-            wire:click="openPixModal"
-            class="payment-method-card cursor-pointer p-4 rounded-lg border-2 transition-all duration-300 flex items-center space-x-4
-                {{ $selectedPaymentMethod === 'pix' ? 'border-green-500 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:border-gray-600' }}"
-        >
-            <svg class="w-10 h-10 text-white flex-shrink-0" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                <path d="M242.4 292.5C247.8 287.1 257.1 287.1 262.5 292.5L339.5 369.5C353.7 383.7 372.6 391.5 392.6 391.5H407.7L310.6 488.6C280.3 518.1 231.1 518.1 200.8 488.6L103.3 391.5H112.6C132.6 391.5 151.5 383.7 165.7 369.5L242.4 292.5zM262.5 218.9C257.1 224.3 247.8 224.3 242.4 218.9L165.7 142.1C151.5 127.9 132.6 120.1 112.6 120.1H103.3L200.7 22.76C231.1-7.586 280.3-7.586 310.6 22.76L407.7 120.1H392.6C372.6 120.1 353.7 127.9 339.5 142.1L262.5 218.9z"/>
-            </svg>
-            <div>
-                <p class="text-lg font-semibold {{ $selectedPaymentMethod === 'pix' ? 'text-white' : 'text-gray-300' }}">Pague com PIX</p>
-                <p class="text-sm text-gray-400">Aprovação imediata, sem taxas.</p>
-            </div>
-        </div>
-        @endif
     </div>
 
 </div>
@@ -829,96 +761,6 @@ window.addEventListener('beforeunload', function() {
     <p class="text-sm mt-2 text-gray-400">{{ __('payment.optimizing') }}</p>
 </div>
 
-<!-- PIX Modal -->
-<div id="pix-modal"
-    class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 @if (!$showPixModal) hidden @endif">
-    <div class="bg-[#1F1F1F] rounded-xl max-w-md w-full mx-4 p-6 relative">
-        <button wire:click="closeModal" class="absolute top-3 right-3 text-gray-400 hover:text-white">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-        </button>
-
-        @if (!$pixData)
-            <div class="text-center mb-4">
-                <h3 class="text-2xl font-bold text-white">Pagamento com PIX</h3>
-                <p class="text-gray-300 mt-2">Preencha seus dados para gerar o código PIX.</p>
-            </div>
-            <!-- Order Summary -->
-            <div class="bg-gray-800 rounded-lg p-4 mb-4">
-                <div class="flex items-center">
-                    <img src="{{ asset('imgs/logo.png') }}" alt="Produto" class="w-16 h-16 rounded-lg mr-4">
-                    <div>
-                        <h4 class="text-white font-semibold">{{ $product['title'] }}</h4>
-                        <p class="text-gray-400 text-sm">Plano {{ $plans[$selectedPlan]['label'] }}</p>
-                    </div>
-                </div>
-                <div class="border-t border-gray-700 pt-3 mt-3">
-                    <div class="flex justify-between text-sm mb-1">
-                        <span>Preço Original</span>
-                        <del class="text-gray-400">{{ $currencies[$selectedCurrency]['symbol'] }} {{ $totals['total_price'] }}</del>
-                    </div>
-                    <div class="flex justify-between text-sm mb-1">
-                        <span>Desconto</span>
-                        <span class="text-green-400">{{ $currencies[$selectedCurrency]['symbol'] }} {{ $totals['total_discount'] }}</span>
-                    </div>
-                    <div class="flex justify-between text-lg font-bold mt-2">
-                        <span>Total a Pagar</span>
-                        <span>{{ $currencies[$selectedCurrency]['symbol'] }} {{ $totals['final_price'] }}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.your_name') }}</label>
-                    <input name="pix_name" type="text"
-                        placeholder="{{ __('payment.your_name_placeholder') }}" wire:model.defer="pixName"
-                        class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
-                    @error('pixName')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">E-mail</label>
-                    <input name="pix_email" type="email"
-                        placeholder="seu@email.com" wire:model.defer="pixEmail"
-                        class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
-                    @error('pixEmail')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
-                    <input name="pix_phone" type="tel"
-                        placeholder="+55 (11) 99999-9999" wire:model.defer="pixPhone"
-                        class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
-                    @error('pixPhone')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">CPF (obrigatório para pagamentos no Brasil)</label>
-                    <input name="pix_cpf" type="text" x-mask="999.999.999-99"
-                        placeholder="000.000.000-00" wire:model.defer="pixCpf"
-                        class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-all" />
-                    @error('pixCpf')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
-                </div>
-                <button wire:click="startCheckout"
-                    class="w-full bg-green-600 hover:bg-green-500 text-white py-3 text-lg font-bold rounded-xl transition-all block cursor-pointer transform hover:scale-105">
-                    GERAR PIX
-                </button>
-                <button wire:click="switchToCard"
-                    class="w-full bg-gray-600 hover:bg-gray-500 text-white py-2 text-sm font-bold rounded-xl transition-all block cursor-pointer mt-2">
-                    Pagar com Cartão
-                </button>
-            </div>
-        @else
-            <x-pix-card :pixData="$pixData" :pixStatus="$pixStatus" :expiresAt="$pixData['expires_at'] ?? null" />
-        @endif
-    </div>
-</div>
 <!-- Stripe JS -->
 @push('scripts')
 @if($gateway === 'stripe')
