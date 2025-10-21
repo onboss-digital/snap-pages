@@ -2,27 +2,26 @@
 
 namespace App\Services\PaymentGateways;
 
+use App\Interfaces\PaymentGatewayInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
 
-class MercadoPagoGateway
+class MercadoPagoGateway implements PaymentGatewayInterface
 {
-    private string $accessToken;
-    private string $baseUrl;
-    private Client $client;
+    protected Client $client;
+    protected string $token;
+    protected string $baseUri;
 
     public function __construct(Client $client = null)
     {
-        // As credenciais serão obtidas do arquivo de configuração de serviços.
-        // Vou adicionar essas configurações no próximo passo.
-        $this->accessToken = config('services.mercadopago.access_token');
-        $this->baseUrl = 'https://api.mercadopago.com'; // URL da API do Mercado Pago
+        $this->token = config('services.mercadopago.token');
+        $this->baseUri = config('services.mercadopago.base_uri');
 
         $this->client = $client ?: new Client([
-            'base_uri' => $this->baseUrl,
+            'base_uri' => $this->baseUri,
             'headers' => [
-                'Authorization' => "Bearer {$this->accessToken}",
+                'Authorization' => "Bearer {$this->token}",
                 'Content-Type'  => 'application/json',
             ],
             'verify' => !env('APP_DEBUG'),
@@ -30,67 +29,67 @@ class MercadoPagoGateway
     }
 
     /**
-     * Realiza uma requisição para a API do Mercado Pago.
+     * Executes a request to the Mercado Pago API.
      */
     private function request(string $method, string $endpoint, array $data = [])
     {
         try {
             $options = [];
-
             if (!empty($data)) {
-                 $options['json'] = $data;
+                $options['json'] = $data;
             }
 
-            $response = $this->client->request(strtoupper($method), $this->baseUrl . $endpoint, $options);
+            $response = $this->client->request(strtoupper($method), $endpoint, $options);
             return json_decode($response->getBody()->getContents(), true);
-
         } catch (RequestException $e) {
-            $body = $e->getResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
-            $errorMessage = $body['message'] ?? $e->getMessage();
-
-            Log::channel('payment_checkout')->error('MercadoPagoGateway: API Error', [
-                'message' => $errorMessage,
-                'response' => $body
+            $responseBody = $e->getResponse() ? $e->getResponse()->getBody()->getContents() : $e->getMessage();
+            Log::error('MercadoPago API Error', [
+                'endpoint' => $endpoint,
+                'error' => $responseBody
             ]);
-
-            throw new \Exception($errorMessage);
+            throw new \Exception("MercadoPago API error: " . $responseBody);
         }
     }
 
     /**
-     * Gera um pagamento PIX.
-     *
-     * @param array $paymentData Dados do pagamento, incluindo 'transaction_amount', 'product_description', 'payer'.
-     * @return array Resposta da API do Mercado Pago.
-     * @throws \Exception Em caso de falha na requisição.
+     * Creates a PIX payment request.
      */
-    public function generatePix(array $paymentData): array
+    public function createPixPayment(array $paymentData): array
     {
-        $payload = [
-            'transaction_amount' => (float)$paymentData['transaction_amount'],
-            'description'        => $paymentData['product_description'],
-            'payment_method_id'  => 'pix',
-            'payer' => [
-                'email' => $paymentData['payer']['email'],
-                'first_name' => $paymentData['payer']['first_name'],
-                'last_name' => $paymentData['payer']['last_name'],
-                'identification' => [
-                    'type'   => 'CPF',
-                    'number' => $paymentData['payer']['cpf'],
-                ],
-            ],
-        ];
+        return $this->request('POST', '/v1/payments', $paymentData);
+    }
 
-        $response = $this->request('post', '/v1/payments', $payload);
+    /**
+     * Checks the status of a PIX payment.
+     */
+    public function checkPixStatus(string $paymentId): array
+    {
+        return $this->request('GET', "/v1/payments/{$paymentId}");
+    }
 
-        if (!isset($response['id'])) {
-            throw new \Exception('Failed to generate PIX payment.');
-        }
+    // Methods from PaymentGatewayInterface (placeholders)
 
-        return [
-            'mercado_pago_id' => $response['id'],
-            'qr_code_base64'  => $response['point_of_interaction']['transaction_data']['qr_code_base64'],
-            'qr_code'         => $response['point_of_interaction']['transaction_data']['qr_code'],
-        ];
+    public function createCardToken(array $cardData): array
+    {
+        // Not applicable for PIX flow.
+        return ['status' => 'error', 'message' => 'Not implemented.'];
+    }
+
+    public function processPayment(array $paymentData): array
+    {
+        // This method would be for credit card processing.
+        return ['status' => 'error', 'message' => 'Not implemented. Use createPixPayment for PIX transactions.'];
+    }
+
+    public function handleResponse(array $responseData): array
+    {
+        // Not applicable for this PIX flow.
+        return ['status' => 'error', 'message' => 'Not implemented.'];
+    }
+
+    public function formatPlans(mixed $data, string $selectedCurrency): array
+    {
+        // Not applicable for this PIX flow.
+        return [];
     }
 }

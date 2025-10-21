@@ -129,4 +129,10 @@ return [
     'billing' => '📌 Cobrança',
     'release' => '⏳ Liberação',
     'cancellation' => '🧾 Cancelamento',
+
+    // PIX Flow Specific Translations
+    'pix_title' => 'Pagamento via PIX',
+    'full_name' => 'Seu nome completo',
+    'generate_pix' => 'Gerar PIX',
+    'cancel' => 'Pagar com cartão',
 ];
