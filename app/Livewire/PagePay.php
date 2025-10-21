@@ -56,7 +56,6 @@ class PagePay extends Component
     public $spotsLeft = 12;
     public $activityCount = 0;
     public $showSecure = false;
-    public $spotsLeft = 12;
 
     protected function rules()
     {
