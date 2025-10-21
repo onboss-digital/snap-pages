@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Factories\PaymentGatewayFactory;
 use App\Interfaces\PaymentGatewayInterface;
+use App\Services\PaymentGateways\MercadoPagoGateway;
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +22,12 @@ class PagePay extends Component
     // Modals
     public $showErrorModal = false;
     public $showProcessingModal = false;
+    public $showSuccessModal = false;
+    public $showPixModal = false;
+    public $pixData = null;
+    public $showUpsellModal = false;
+    public $showDownsellModal = false;
+    public $showLodingModal = false; // Mantendo o erro de digitação do Blade
 
     // Configurações de Idioma e Moeda
     public $selectedCurrency = 'BRL';
@@ -39,13 +46,22 @@ class PagePay extends Component
 
     // Outras propriedades
     public $totals = [];
-    private PaymentGatewayInterface $paymentGateway;
+    public $modalData = [];
+    public $bumps = [];
+    private ?PaymentGatewayInterface $paymentGateway;
+    private ?MercadoPagoGateway $mercadoPagoGateway = null;
+
+    // Propriedades para o formulário PIX
+    public $pixName, $pixEmail, $pixCpf, $pixPhone;
+    public $pixPaymentId;
+    public $paymentStatus;
+    public $isGeneratingPix = false;
+
     public $countdownMinutes = 15;
     public $countdownSeconds = 0;
     public $spotsLeft = 12;
     public $activityCount = 0;
     public $showSecure = false;
-    public $spotsLeft = 12;
 
     protected function rules()
     {
@@ -82,6 +98,8 @@ class PagePay extends Component
                 'title' => $this->plans[$this->selectedPlan]['label'] ?? '',
             ];
         }
+
+        $this->mercadoPagoGateway = new MercadoPagoGateway();
     }
 
     public function getPlans()
@@ -218,5 +236,82 @@ class PagePay extends Component
     public function render()
     {
         return view('livewire.page-pay')->layoutData(['title' => __('payment.title')]);
+    }
+
+    public function processPixPayment()
+    {
+        $this->validate([
+            'pixName' => 'required|string|max:255',
+            'pixEmail' => 'required|email',
+            'pixCpf' => ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'],
+        ]);
+
+        $this->isGeneratingPix = true;
+        $this->pixData = null;
+
+        try {
+            $plan = $this->plans[$this->selectedPlan] ?? null;
+            if (!$plan) {
+                throw new \Exception('Plano selecionado não encontrado.');
+            }
+            $finalPrice = $plan['prices'][$this->selectedCurrency]['descont_price'] ?? 0;
+
+
+            $paymentData = [
+                'transaction_amount' => $finalPrice,
+                'description' => $this->product['title'],
+                'payment_method_id' => 'pix',
+                'payer' => [
+                    'email' => $this->pixEmail,
+                    'first_name' => $this->pixName,
+                    'identification' => [
+                        'type' => 'CPF',
+                        'number' => preg_replace('/[^0-9]/', '', $this->pixCpf),
+                    ],
+                ],
+                'notification_url' => route('webhooks.mercadopago'),
+            ];
+
+            $response = $this->mercadoPagoGateway->createPixPayment($paymentData);
+
+            if (isset($response['id'])) {
+                $this->pixPaymentId = $response['id'];
+                $this->pixData = [
+                    'qr_code_base64' => $response['point_of_interaction']['transaction_data']['qr_code_base64'],
+                    'qr_code' => $response['point_of_interaction']['transaction_data']['qr_code'],
+                ];
+                $this->paymentStatus = 'pending';
+            } else {
+                $this->addError('pix', 'Não foi possível gerar o PIX. Tente novamente.');
+            }
+        } catch (\Exception $e) {
+            Log::error('Erro ao processar pagamento PIX', ['exception' => $e->getMessage()]);
+            $this->addError('pix', 'Ocorreu um erro inesperado. Tente novamente mais tarde.');
+        } finally {
+            $this->isGeneratingPix = false;
+        }
+    }
+
+    public function checkPaymentStatus()
+    {
+        if (!$this->pixPaymentId || $this->paymentStatus !== 'pending') {
+            return;
+        }
+
+        try {
+            $response = $this->mercadoPagoGateway->checkPixStatus($this->pixPaymentId);
+            $status = $response['status'] ?? null;
+
+            if ($status === 'approved') {
+                $this->paymentStatus = 'approved';
+                // O redirecionamento será tratado no frontend via dispatch
+                $this->dispatch('paymentApproved');
+            } elseif (in_array($status, ['cancelled', 'expired', 'rejected'])) {
+                $this->paymentStatus = 'failed';
+                $this->dispatch('paymentFailed');
+            }
+        } catch (\Exception $e) {
+            Log::error('Erro ao verificar status do pagamento PIX', ['payment_id' => $this->pixPaymentId, 'exception' => $e->getMessage()]);
+        }
     }
 }

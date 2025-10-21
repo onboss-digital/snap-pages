@@ -226,6 +226,24 @@ $gateway = config('services.default_payment_gateway', 'stripe');
             </div>
         </div>
 
+        {{-- Card PIX --}}
+        <div
+            wire:click="$set('selectedPaymentMethod', 'pix'); $set('showPixModal', true)"
+            class="payment-method-card cursor-pointer p-6 rounded-lg border-2 transition-all duration-300
+                {{ $selectedPaymentMethod === 'pix' ? 'border-red-500 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:border-gray-600' }}"
+        >
+            <div class="flex flex-col items-center text-center">
+                <svg class="w-12 h-12 mb-3 {{ $selectedPaymentMethod === 'pix' ? 'text-red-500' : 'text-gray-400' }}"
+                     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+                    <path fill="currentColor"
+                          d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24m-2.29 154.43a8 8 0 0 1-13.42 0L54.57 93.3a8 8 0 0 1 6.71-11.75h28.1a8 8 0 0 1 6.72 4.43l30.41 53.86a28 28 0 0 0 49-21.41V96a8 8 0 0 1 8-8h16a8 8 0 0 1 0 16h-8v24.44a44.05 44.05 0 0 1-75.12 30Z"/>
+                </svg>
+                <span class="text-lg font-semibold {{ $selectedPaymentMethod === 'pix' ? 'text-white' : 'text-gray-300' }}">
+                    PIX
+                </span>
+            </div>
+        </div>
+
     </div>
 
 </div>
@@ -568,9 +586,99 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 </div>
 
 </form>
+
+<!-- PIX Modal -->
+<div x-data="{ show: $wire.entangle('showPixModal') }" x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" style="display: none;">
+    <div @click.away="show = false" class="bg-[#1F1F1F] rounded-xl max-w-md w-full mx-4 p-8">
+
+        <!-- View: Before PIX is generated -->
+        @if (!$pixData)
+            <h3 class="text-2xl font-bold text-white text-center mb-6">{{ __('payment.pix_title') }}</h3>
+
+            <!-- Order Summary -->
+            <div class="bg-gray-800 rounded-lg p-4 mb-6 flex items-center">
+                <img src="https://web.snaphubb.online/wp-content/uploads/2025/10/capa-brasil.jpg" alt="{{ __('payment.product_name') }}" class="w-20 h-20 rounded-lg mr-4">
+                <div>
+                    <h4 class="text-white font-semibold">{{ __('payment.product_name') }}</h4>
+                    <p class="text-gray-400 text-sm">{{ $plans[$selectedPlan]['label'] }}</p>
+                    <div class="mt-1">
+                        <del class="text-gray-500">{{ $currencies[$selectedCurrency]['symbol'] }} {{ $totals['total_price'] ?? '00' }}</del>
+                        <span class="text-green-400 font-bold ml-2">{{ $currencies[$selectedCurrency]['symbol'] }} {{ $totals['final_price'] ?? '00' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PIX Form -->
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.full_name') }}</label>
+                    <input type="text" placeholder="{{ __('payment.full_name_placeholder') }}" wire:model.defer="pixName" class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                    @error('pixName') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.email_access') }}</label>
+                    <input type="email" placeholder="{{ __('payment.email_placeholder') }}" wire:model.defer="pixEmail" class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                    @error('pixEmail') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.cpf') }}</label>
+                    <input type="text" x-mask="999.999.999-99" placeholder="000.000.000-00" wire:model.defer="pixCpf" class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                    @error('pixCpf') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.phone_optional') }}</label>
+                    <input type="tel" placeholder="+55 (11) 99999-9999" wire:model.defer="pixPhone" class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <button wire:click.prevent="processPixPayment" wire:loading.attr="disabled" class="w-full bg-[#E50914] hover:bg-[#B8070F] text-white py-3 text-lg font-bold rounded-xl transition-all flex items-center justify-center">
+                    <span wire:loading.remove wire:target="processPixPayment">{{ __('payment.generate_pix') }}</span>
+                    <span wire:loading wire:target="processPixPayment">{{ __('payment.generating_pix') }}</span>
+                </button>
+                <button @click="show = false" class="w-full text-center text-gray-400 mt-4 hover:text-white">{{ __('payment.cancel') }}</button>
+            </div>
+
+        <!-- View: After PIX is generated -->
+        @else
+            <div wire:poll.3s="checkPaymentStatus">
+                <h3 class="text-2xl font-bold text-white text-center mb-4">{{ __('payment.awaiting_payment') }}</h3>
+                <p class="text-center text-gray-300 mb-6">{{ __('payment.scan_qr_code') }}</p>
+
+                <div class="flex justify-center">
+                    <img src="data:image/jpeg;base64,{{ $pixData['qr_code_base64'] }}" alt="PIX QR Code" class="w-64 h-64 border-4 border-white rounded-lg">
+                </div>
+
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-300 mb-1 text-center">{{ __('payment.copy_code') }}</label>
+                    <div class="relative">
+                        <input type="text" readonly value="{{ $pixData['qr_code'] }}" class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 pr-12 text-center">
+                        <button onclick="navigator.clipboard.writeText('{{ $pixData['qr_code'] }}')" class="absolute inset-y-0 right-0 px-4 flex items-center bg-gray-700 rounded-r-lg hover:bg-gray-600" title="{{ __('payment.copy_pix_code') }}">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <div wire:loading.remove>
+                        <p class="text-yellow-400" wire:dirty wire:target="checkPaymentStatus" wire:loading.class="hidden">{{ __('payment.status_awaiting') }}</p>
+                        <p class="text-green-400" wire:dirty wire:target="checkPaymentStatus" wire:loading.class="hidden" x-show="$wire.paymentStatus == 'approved'">{{ __('payment.status_approved') }}</p>
+                        <p class="text-red-400" wire:dirty wire:target="checkPaymentStatus" wire:loading.class="hidden" x-show="$wire.paymentStatus == 'failed'">{{ __('payment.status_failed') }}</p>
+                    </div>
+                     <div wire:loading wire:target="checkPaymentStatus" class="flex items-center justify-center text-gray-400">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {{ __('payment.status_checking') }}
+                    </div>
+                </div>
+
+                <button wire:click="$set('pixData', null)" class="w-full text-center text-gray-400 mt-6 hover:text-white">{{ __('payment.cancel_and_back') }}</button>
+            </div>
+        @endif
+    </div>
 </div>
-
-
 
 <!-- Upsell Modal -->
 <div id="upsell-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 @if (!$showUpsellModal) hidden @endif">
@@ -762,6 +870,7 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 </div>
 
 <!-- Stripe JS -->
+</div>
 @push('scripts')
 @if($gateway === 'stripe')
 <script src="https://js.stripe.com/v3/"></script>
@@ -860,6 +969,16 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 
     window.addEventListener('redirectToExternal', event => {
         window.location.href = event.detail.url;
+    });
+
+    document.addEventListener('livewire:init', () => {
+        Livewire.on('paymentApproved', () => {
+            window.location.href = 'https://web.snaphubb.online/obg-br';
+        });
+
+        Livewire.on('paymentFailed', () => {
+            window.location.href = 'https://web.snaphubb.online/fail-br';
+        });
     });
 </script>
 @endif

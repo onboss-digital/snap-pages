@@ -2,8 +2,8 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite"
+        "build": "npx vite build",
+        "dev": "npx vite"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.1.10",

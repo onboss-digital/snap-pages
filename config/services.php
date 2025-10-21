@@ -57,4 +57,10 @@ return [
         'api_url' => env('STREAMIT_API_URL'),
     ],
 
+    'mercadopago' => [
+        'token' => env('MERCADOPAGO_TOKEN'),
+        'public_key' => env('MERCADOPAGO_PUBLIC_KEY'),
+        'base_uri' => env('MERCADOPAGO_BASE_URI', 'https://api.mercadopago.com'),
+    ],
+
 ];
