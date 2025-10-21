@@ -1,4 +1,4 @@
-@props(['pixData', 'pixStatus', 'expiresAt'])
+@props(['pixResult', 'pixStatus', 'expiresAt'])
 
 @php
 $statusBadges = [
@@ -39,7 +39,7 @@ $currentStatus = $statusBadges[$pixStatus] ?? $statusBadges['PENDING'];
             </h4>
             <p class="text-gray-300 text-sm mb-4">Por favor, tente novamente</p>
             <button 
-                wire:click="$set('pixData', null)"
+                wire:click="$set('pixResult', null)"
                 class="px-6 py-3 bg-[#E50914] text-white rounded-lg font-semibold hover:bg-red-700 transition-all shadow-lg">
                 Gerar Novo PIX
             </button>
@@ -63,9 +63,9 @@ $currentStatus = $statusBadges[$pixStatus] ?? $statusBadges['PENDING'];
 
         <!-- QR Code -->
         <div class="bg-white rounded-lg p-6 text-center">
-            @if(isset($pixData['brCodeBase64']))
+            @if(isset($pixResult['brCodeBase64']))
                 <img 
-                    src="{{ $pixData['brCodeBase64'] }}" 
+                    src="{{ $pixResult['brCodeBase64'] }}"
                     alt="QR Code PIX" 
                     class="mx-auto w-48 h-48 object-contain"
                     id="pix-qr-image"
@@ -88,13 +88,13 @@ $currentStatus = $statusBadges[$pixStatus] ?? $statusBadges['PENDING'];
             <div class="flex justify-between items-center">
                 <span class="text-gray-400 text-sm font-medium">Valor a pagar:</span>
                 <span class="text-white font-bold text-xl text-green-400">
-                    R$ {{ number_format(($pixData['amount'] ?? 0) / 100, 2, ',', '.') }}
+                    R$ {{ number_format(($pixResult['amount'] ?? 0) / 100, 2, ',', '.') }}
                 </span>
             </div>
-            @if(isset($pixData['pix_id']))
+            @if(isset($pixResult['pix_id']))
             <div class="flex justify-between items-center pt-2 mt-2 border-t border-gray-700">
                 <span class="text-gray-500 text-xs">ID da Transação:</span>
-                <span class="text-gray-400 text-xs font-mono">{{ substr($pixData['pix_id'], 0, 20) }}...</span>
+                <span class="text-gray-400 text-xs font-mono">{{ substr($pixResult['pix_id'], 0, 20) }}...</span>
             </div>
             @endif
         </div>
@@ -130,7 +130,7 @@ $currentStatus = $statusBadges[$pixStatus] ?? $statusBadges['PENDING'];
             </div>
             <div class="bg-black/50 rounded-lg p-3 border border-gray-700">
                 <p class="text-gray-300 font-mono text-xs break-all leading-relaxed max-h-24 overflow-y-auto" id="pix-brcode">
-                    {{ $pixData['brCode'] ?? 'Carregando código...' }}
+                    {{ $pixResult['brCode'] ?? 'Carregando código...' }}
                 </p>
             </div>
         </div>
