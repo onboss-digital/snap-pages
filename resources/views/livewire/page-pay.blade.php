@@ -226,6 +226,24 @@ $gateway = config('services.default_payment_gateway', 'stripe');
             </div>
         </div>
 
+        @if ($selectedLanguage === 'br')
+        <div
+            wire:click="$set('showPixModal', true)"
+            class="payment-method-card cursor-pointer p-6 rounded-lg border-2 transition-all duration-300
+                {{ $selectedPaymentMethod === 'pix' ? 'border-red-500 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:border-gray-600' }}"
+        >
+            <div class="flex flex-col items-center text-center">
+                <svg class="w-12 h-12 mb-3 {{ $selectedPaymentMethod === 'pix' ? 'text-red-500' : 'text-gray-400' }}"
+                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+                    <path fill="currentColor"
+                        d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24m-4 60a12 12 0 1 1-12 12a12 12 0 0 1 12-12m-36 28a12 12 0 1 1-12 12a12 12 0 0 1 12-12m-12 60a12 12 0 1 1-12 12a12 12 0 0 1 12-12m72-60a12 12 0 1 1-12 12a12 12 0 0 1 12-12m32 20a16 16 0 0 1-16 16h-16a16 16 0 0 1-16-16v-16a16 16 0 0 1 16-16h16a16 16 0 0 1 16 16Zm-28 64h-16v-16h16Zm-64 0h-16v-16h16Zm-16-32h16v16h-16v-16h16v-16h-16v-16h16v-16h-16Zm48 32h16v-16h-16Zm16-32h16v16h-16v-16h16v-16h-16Zm16 16h16v16h-16Z" />
+                </svg>
+                <span class="text-lg font-semibold {{ $selectedPaymentMethod === 'pix' ? 'text-white' : 'text-gray-300' }}">
+                    PIX
+                </span>
+            </div>
+        </div>
+        @endif
     </div>
 
 </div>
@@ -864,4 +882,6 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 </script>
 @endif
 @endpush
+
+@include('livewire.pix-modal')
 </div>

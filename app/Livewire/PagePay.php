@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Factories\PaymentGatewayFactory;
 use App\Interfaces\PaymentGatewayInterface;
+use App\Models\PixOrder;
+use App\Services\PaymentGateways\MercadoPagoGateway;
 use Livewire\Component;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +16,9 @@ class PagePay extends Component
     public $cardName, $email, $phone, $cpf, $cardNumber, $cardExpiry, $cardCvv;
     public $paymentMethodId;
 
+    // Propriedades para o formulário PIX
+    public $pixName, $pixEmail, $pixCpf;
+
     // Estado do Componente
     public $plans, $product, $testimonials = [];
     public $selectedPaymentMethod = 'credit_card';
@@ -21,6 +26,8 @@ class PagePay extends Component
     // Modals
     public $showErrorModal = false;
     public $showProcessingModal = false;
+    public $showPixModal = false;
+    public $pixResult = [];
 
     // Configurações de Idioma e Moeda
     public $selectedCurrency = 'BRL';
@@ -50,12 +57,16 @@ class PagePay extends Component
     protected function rules()
     {
         $rules = [
-            'cardName' => 'required|string|max:255',
-            'email' => 'required|email',
+            'cardName' => 'required_if:selectedPaymentMethod,credit_card|string|max:255',
+            'email' => 'required_if:selectedPaymentMethod,credit_card|email',
+
+            'pixName' => 'required_if:selectedPaymentMethod,pix|string|max:255',
+            'pixEmail' => 'required_if:selectedPaymentMethod,pix|email',
+            'pixCpf' => 'required_if:selectedPaymentMethod,pix|string', // Simplificando a validação do CPF por enquanto
         ];
 
         if ($this->selectedLanguage === 'br') {
-            $rules['cpf'] = ['required', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
+            $rules['cpf'] = ['required_if:selectedPaymentMethod,credit_card', 'string', 'regex:/^\d{3}\.\d{3}\.\d{3}\-\d{2}$|^\d{11}$/'];
         }
 
         return $rules;
@@ -213,6 +224,85 @@ class PagePay extends Component
     {
         $preferredLanguage = request()->getPreferredLanguage(array_keys($this->availableLanguages));
         $this->changeLanguage(str_starts_with($preferredLanguage, 'pt') ? 'br' : 'en');
+    }
+
+    public function generatePixOrder()
+    {
+        $this->selectedPaymentMethod = 'pix';
+        $this->validate([
+            'pixName' => 'required|string|max:255',
+            'pixEmail' => 'required|email',
+            'pixCpf' => 'required|string', // Adicionar uma validação de CPF mais robusta depois
+        ]);
+
+        $this->showProcessingModal = true;
+
+        try {
+            // 1. Criar o pedido no nosso banco de dados com status "pending"
+            $order = PixOrder::create([
+                'transaction_amount' => 24.90, // Valor mockado conforme solicitado
+                'product_description' => 'Produto Teste PIX', // Descrição mockada
+                'customer_name' => $this->pixName,
+                'customer_email' => $this->pixEmail,
+                'customer_document' => $this->pixCpf,
+                'status' => 'pending',
+            ]);
+
+            // 2. Preparar dados para o gateway de pagamento
+            $nameParts = explode(' ', $this->pixName, 2);
+            $paymentData = [
+                'transaction_amount' => $order->transaction_amount,
+                'product_description' => $order->product_description,
+                'payer' => [
+                    'email' => $this->pixEmail,
+                    'first_name' => $nameParts[0],
+                    'last_name' => $nameParts[1] ?? '',
+                    'cpf' => $this->pixCpf,
+                ],
+            ];
+
+            // 3. Chamar o gateway para gerar o PIX
+            $gateway = new MercadoPagoGateway();
+            $gatewayResponse = $gateway->generatePix($paymentData);
+
+            // 4. Atualizar nosso pedido com os dados do Mercado Pago
+            $order->update([
+                'mercado_pago_id' => $gatewayResponse['mercado_pago_id'],
+                'qr_code_base64' => $gatewayResponse['qr_code_base64'],
+                'qr_code' => $gatewayResponse['qr_code'],
+            ]);
+
+            // 5. Preparar o resultado para ser exibido no modal
+            $this->pixResult = [
+                'qr_code_base64' => $gatewayResponse['qr_code_base64'],
+                'qr_code' => $gatewayResponse['qr_code'],
+                'status' => 'pending',
+                'order_id' => $order->id, // Passar o ID para a verificação de status
+            ];
+
+        } catch (\Exception $e) {
+            $this->showErrorModal = true;
+            $this->addError('pix_payment', 'Não foi possível gerar o PIX. Tente novamente.');
+            Log::error('Erro ao gerar PIX com Mercado Pago.', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        } finally {
+            $this->showProcessingModal = false;
+        }
+    }
+
+    public function checkPixStatus()
+    {
+        if (isset($this->pixResult['order_id'])) {
+            $order = PixOrder::find($this->pixResult['order_id']);
+            if ($order && $order->status === 'approved') {
+                $this->pixResult['status'] = 'approved';
+
+                // Opcional: redirecionar ou mostrar uma mensagem de sucesso mais proeminente.
+                // Por enquanto, apenas atualizamos o status para o modal reagir.
+            }
+        }
     }
 
     public function render()

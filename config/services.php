@@ -53,6 +53,11 @@ return [
         'api_url' => env('STRIPE_API_URL', 'https://api.stripe.com/v1'),
     ],
 
+    'mercadopago' => [
+        'access_token' => env('MERCADOPAGO_ACCESS_TOKEN', 'TEST-1949014578725661-101900-7f5fd849d0a31ffbe3e5638a242ff8ab-1819882050'),
+        'public_key' => env('MERCADOPAGO_PUBLIC_KEY', 'TEST-1a5fe0ab-d75a-4dd4-a04b-83f89ef7d8e3'),
+    ],
+
     'streamit' => [
         'api_url' => env('STREAMIT_API_URL'),
     ],

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MercadoPagoWebhookController;
 use App\Livewire\PagePay;
 use App\Http\Controllers\Webhook\AbacatePayWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,10 @@ Route::get('/', PagePay::class);
 // ===== WEBHOOK ABACATEPAY =====
 Route::post('/webhook/abacatepay', [AbacatePayWebhookController::class, 'handle'])
     ->name('webhook.abacatepay');
+
+// ===== WEBHOOK MERCADO PAGO =====
+Route::post('/webhook/mercadopago', [MercadoPagoWebhookController::class, 'handle'])
+    ->name('webhook.mercadopago');
 
 // ===== PÁGINAS DE RETORNO PIX =====
 
