@@ -6,6 +6,7 @@ use App\Interfaces\PaymentGatewayInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class MercadoPagoGateway implements PaymentGatewayInterface
 {
@@ -38,7 +39,14 @@ class MercadoPagoGateway implements PaymentGatewayInterface
     private function request(string $method, string $endpoint, array $data = [])
     {
         try {
-            $options = [];
+            $options = [
+                'headers' => []
+            ];
+
+            if (strtoupper($method) === 'POST') {
+                $options['headers']['X-Idempotency-Key'] = (string) Str::uuid();
+            }
+
             if (!empty($data)) {
                 $options['json'] = $data;
             }
