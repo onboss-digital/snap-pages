@@ -25,6 +25,9 @@ class PagePay extends Component
     public $showSuccessModal = false;
     public $showPixModal = false;
     public $pixData = null;
+    public $showUpsellModal = false;
+    public $showDownsellModal = false;
+    public $showLodingModal = false; // Mantendo o erro de digitação do Blade
 
     // Configurações de Idioma e Moeda
     public $selectedCurrency = 'BRL';
@@ -43,6 +46,8 @@ class PagePay extends Component
 
     // Outras propriedades
     public $totals = [];
+    public $modalData = [];
+    public $bumps = [];
     private ?PaymentGatewayInterface $paymentGateway;
     private ?MercadoPagoGateway $mercadoPagoGateway = null;
 
