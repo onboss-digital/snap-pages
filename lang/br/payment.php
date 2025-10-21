@@ -39,6 +39,9 @@ return [
     'email' => 'E-mail',
     'phone' => 'Telefone',
     'cpf' => 'CPF (obrigatório para pagamentos no Brasil)',
+    'card_number_placeholder' => '0000 0000 0000 0000',
+    'email_placeholder' => 'seu@email.com',
+    'phone_placeholder' => '+55 (11) 99999-9999',
 
     // Order Bump
     'exclusive_access' => 'Criptografía anónima',
@@ -129,4 +132,5 @@ return [
     'billing' => '📌 Cobrança',
     'release' => '⏳ Liberação',
     'cancellation' => '🧾 Cancelamento',
+    'close' => 'Fechar',
 ];

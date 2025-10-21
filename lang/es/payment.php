@@ -38,6 +38,9 @@ return [
     'email' => 'Correo electrónico',
     'phone' => 'Teléfono',
     'cpf' => 'CPF (obligatorio para pagos en Brasil)',
+    'card_number_placeholder' => '0000 0000 0000 0000',
+    'email_placeholder' => 'tu@email.com',
+    'phone_placeholder' => '+34 (555) 555-555',
 
     // Order Bump
     'exclusive_access' => 'Acceso exclusivo a transmisiones en vivo semanales',
@@ -123,4 +126,5 @@ return [
     'billing' => '📌 Facturación',
     'release' => '⏳ Liberación',
     'cancellation' => '🧾 Cancelación',
+    'close' => 'Cerrar',
 ];

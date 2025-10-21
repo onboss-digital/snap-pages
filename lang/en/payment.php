@@ -38,6 +38,9 @@ return [
     'email' => 'Email',
     'phone' => 'Phone number',
     'cpf' => 'CPF (required for payments in Brazil)',
+    'card_number_placeholder' => '0000 0000 0000 0000',
+    'email_placeholder' => 'your@email.com',
+    'phone_placeholder' => '+1 (555) 555-5555',
 
     // Order Bump
     'exclusive_access' => 'Exclusive access to weekly live sessions',
@@ -124,4 +127,5 @@ return [
     'billing' => '📌 Billing',
     'release' => '⏳ Release',
     'cancellation' => '🧾 Cancellation',
+    'close' => 'Close',
 ];

@@ -93,9 +93,11 @@ $gateway = config('services.default_payment_gateway', 'stripe');
     gtag('config', 'G-VYXG6DL5W4');
 </script>
 <!-- End Google Analytics -->
+@vite(['node_modules/intl-tel-input/build/css/intlTelInput.css'])
 @endsection
 
 @section('scripts')
+@vite(['node_modules/intl-tel-input/build/js/intlTelInput.min.js'])
 <script>
 // Polling para verificar status do PIX
 let pixPollingInterval = null;
@@ -257,45 +259,30 @@ window.addEventListener('beforeunload', function() {
                 <div id="payment-method-section" class="bg-[#1F1F1F] rounded-xl p-6 mb-6 scroll-mt-8">
                     {{-- ===== MÉTODO DE PAGAMENTO ===== --}}
 <div class="mb-6">
-    <h3 class="text-xl font-bold text-white mb-4">Método de pagamento</h3>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {{-- Card Cartão de Crédito --}}
-        <div
+    <h3 class="text-xl font-bold text-white mb-4">{{ __('payment.payment_method') }}</h3>
+    <div class="flex bg-gray-800 rounded-xl p-1">
+        <button type="button"
             wire:click="$set('selectedPaymentMethod', 'credit_card')"
-            class="payment-method-card cursor-pointer p-6 rounded-lg border-2 transition-all duration-300
-                {{ $selectedPaymentMethod === 'credit_card' ? 'border-red-500 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:border-gray-600' }}"
-        >
-            <div class="flex flex-col items-center text-center">
-                <svg class="w-12 h-12 mb-3 {{ $selectedPaymentMethod === 'credit_card' ? 'text-red-500' : 'text-gray-400' }}"
-                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                </svg>
-                <span class="text-lg font-semibold {{ $selectedPaymentMethod === 'credit_card' ? 'text-white' : 'text-gray-300' }}">
-                    Cartão
-                </span>
-            </div>
-        </div>
-
-        {{-- Card PIX (só para Brasil) --}}
+            :class="{ 'bg-red-500 text-white': '{{ $selectedPaymentMethod }}' === 'credit_card', 'text-gray-400': '{{ $selectedPaymentMethod }}' !== 'credit_card' }"
+            class="flex-1 py-3 px-4 rounded-lg text-center font-semibold transition-all duration-300 flex items-center justify-center space-x-2">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+            <span>{{ __('payment.card') }}</span>
+        </button>
         @if($selectedLanguage === 'br')
-        <div
+        <button type="button"
             wire:click="openPixModal"
-            class="payment-method-card cursor-pointer p-4 rounded-lg border-2 transition-all duration-300 flex items-center space-x-4
-                {{ $selectedPaymentMethod === 'pix' ? 'border-green-500 bg-gray-800' : 'border-gray-700 bg-gray-900 hover:border-gray-600' }}"
-        >
-            <svg class="w-10 h-10 text-white flex-shrink-0" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            :class="{ 'bg-green-500 text-white': '{{ $selectedPaymentMethod }}' === 'pix', 'text-gray-400': '{{ $selectedPaymentMethod }}' !== 'pix' }"
+            class="flex-1 py-3 px-4 rounded-lg text-center font-semibold transition-all duration-300 flex items-center justify-center space-x-2">
+            <svg class="w-6 h-6" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M242.4 292.5C247.8 287.1 257.1 287.1 262.5 292.5L339.5 369.5C353.7 383.7 372.6 391.5 392.6 391.5H407.7L310.6 488.6C280.3 518.1 231.1 518.1 200.8 488.6L103.3 391.5H112.6C132.6 391.5 151.5 383.7 165.7 369.5L242.4 292.5zM262.5 218.9C257.1 224.3 247.8 224.3 242.4 218.9L165.7 142.1C151.5 127.9 132.6 120.1 112.6 120.1H103.3L200.7 22.76C231.1-7.586 280.3-7.586 310.6 22.76L407.7 120.1H392.6C372.6 120.1 353.7 127.9 339.5 142.1L262.5 218.9z"/>
             </svg>
-            <div>
-                <p class="text-lg font-semibold {{ $selectedPaymentMethod === 'pix' ? 'text-white' : 'text-gray-300' }}">Pague com PIX</p>
-                <p class="text-sm text-gray-400">Aprovação imediata, sem taxas.</p>
-            </div>
-        </div>
+            <span>{{ __('payment.pix') }}</span>
+        </button>
         @endif
     </div>
-
 </div>
 
                     <!-- Card payment form - shown conditionally -->
@@ -307,7 +294,7 @@ window.addEventListener('beforeunload', function() {
                                 <label
                                     class="block text-sm font-medium text-gray-300 mb-1">{{ __('checkout.card_number') }}</label>
                                 <input name="card_number" type="text" id="card-number"
-                                    x-mask="9999 9999 9999 9999" placeholder="0000 0000 0000 0000"
+                                    x-mask="9999 9999 9999 9999" placeholder="{{ __('payment.card_number_placeholder') }}"
                                     wire:model.defer="cardNumber"
                                     class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
                                 @error('cardNumber')
@@ -347,33 +334,64 @@ window.addEventListener('beforeunload', function() {
                             </div>
                             @endif
 
-                            <div>
+                            <div class="relative">
                                 <label
                                     class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.card_name') }}</label>
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                </div>
                                 <input name="card_name" type="text"
                                     placeholder="{{ __('payment.card_name') }}" wire:model.defer="cardName"
-                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 pl-10 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
                                 @error('cardName')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
 
-                            <div>
+                            <div x-data="{ email: '', domain: '', suggestions: ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com'], get filteredSuggestions() { return this.suggestions.filter(s => s.startsWith(this.domain)) } }" class="relative">
                                 <label class="block text-sm font-medium text-gray-300 mb-1">E-mail</label>
-                                <input name="email" type="email" placeholder="seu@email.com"
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                </div>
+                                <input name="email" type="email" placeholder="{{ __('payment.email_placeholder') }}"
                                     wire:model.defer="email"
-                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                    x-model="email"
+                                    @input="atIndex = email.indexOf('@'); if (atIndex > -1) { domain = email.substring(atIndex + 1); } else { domain = '' }"
+                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 pl-10 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                <template x-if="domain && filteredSuggestions.length > 0">
+                                    <ul class="absolute z-10 w-full bg-[#2D2D2D] border border-gray-700 rounded-b-lg -mt-1">
+                                        <template x-for="suggestion in filteredSuggestions">
+                                            <li @click="email = email.substring(0, email.indexOf('@') + 1) + suggestion; domain = ''" class="px-3 py-2 cursor-pointer hover:bg-gray-700" x-text="email.substring(0, email.indexOf('@') + 1) + suggestion"></li>
+                                        </template>
+                                    </ul>
+                                </template>
                                 @error('email')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
 
-                            <div>
+                            <div wire:ignore>
                                 <label
                                     class="block text-sm font-medium text-gray-300 mb-1">{{ __('payment.phone') }}</label>
-                                <input name="phone" type="tel" placeholder="+55 (11) 99999-9999"
-                                    wire:model.defer="phone"
-                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
+                                <input id="phone" name="phone" type="tel" placeholder="{{ __('payment.phone_placeholder') }}"
+                                    x-data="{
+                                        init() {
+                                            const iti = window.intlTelInput(this.$el, {
+                                                initialCountry: 'auto',
+                                                geoIpLookup: callback => {
+                                                    fetch('https://ipapi.co/json')
+                                                        .then(res => res.json())
+                                                        .then(data => callback(data.country_code))
+                                                        .catch(() => callback('us'));
+                                                },
+                                                utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.3/build/js/utils.js'
+                                            });
+                                            this.$el.addEventListener('change', () => {
+                                                $wire.set('phone', iti.getNumber());
+                                            });
+                                        }
+                                    }"
+                                    class="w-full bg-[#2D2D2D] text-white rounded-lg p-3 pl-14 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#E50914] transition-all" />
                                 @error('phone')
                                 <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                                 @enderror
@@ -730,7 +748,7 @@ window.addEventListener('beforeunload', function() {
         <p class="text-gray-300">{{ __('payment.error') }}</p>
             <button id="close-error" wire:click.prevent="closeModal"
                 class="bg-[#E50914] hover:bg-[#B8070F] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center cursor-pointer">
-                Close
+                {{ __('payment.close') }}
             </button>
     </div>
 </div>
@@ -742,7 +760,7 @@ window.addEventListener('beforeunload', function() {
         <h3 class="text-xl font-bold text-white mb-2">{{ __('payment.success') }}</h3>
             <button id="close-error" wire:click.prevent="closeModal"
                 class="bg-[#42b70a] hover:bg-[#2a7904] text-white py-2 px-6 text-base font-semibold rounded-full shadow-lg w-auto min-w-[180px] max-w-xs mx-auto transition-all flex items-center justify-center cursor-pointer">
-                Close
+                {{ __('payment.close') }}
             </button>
     </div>
 </div>
