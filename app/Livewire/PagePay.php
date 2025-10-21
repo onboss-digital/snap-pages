@@ -26,6 +26,7 @@ class PagePay extends Component
     // Modals
     public $showErrorModal = false;
     public $showProcessingModal = false;
+    public $showSuccessModal = false;
     public $showPixModal = false;
     public $pixResult = [];
 
