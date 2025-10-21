@@ -28,8 +28,14 @@ class PagePay extends Component
     public $showProcessingModal = false;
     public $showSuccessModal = false;
     public $showDownsellModal = false;
+    public $showUpsellModal = false;
+    public $showLodingModal = false; // Corrigindo erro de variável não definida (typo na view)
     public $showPixModal = false;
     public $pixResult = [];
+    public $modalData = [];
+
+    // Order Bumps
+    public $bumps = [];
 
     // Configurações de Idioma e Moeda
     public $selectedCurrency = 'BRL';
@@ -54,7 +60,6 @@ class PagePay extends Component
     public $spotsLeft = 12;
     public $activityCount = 0;
     public $showSecure = false;
-    public $spotsLeft = 12;
 
     protected function rules()
     {
