@@ -882,6 +882,5 @@ $gateway = config('services.default_payment_gateway', 'stripe');
 </script>
 @endif
 @endpush
-
-@include('livewire.pix-modal')
+    @include('livewire.pix-modal')
 </div>
