@@ -10,13 +10,17 @@ use Illuminate\Support\Facades\Log;
 class MercadoPagoGateway implements PaymentGatewayInterface
 {
     protected Client $client;
-    protected string $token;
+    protected ?string $token;
     protected string $baseUri;
 
     public function __construct(Client $client = null)
     {
         $this->token = config('services.mercadopago.token');
         $this->baseUri = config('services.mercadopago.base_uri');
+
+        if (!$this->token) {
+            throw new \InvalidArgumentException('A chave de acesso (token) do Mercado Pago não está configurada no arquivo .env.');
+        }
 
         $this->client = $client ?: new Client([
             'base_uri' => $this->baseUri,
